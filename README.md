@@ -1,6 +1,6 @@
 # mpi
 
-mpi is a rust-based application which can inspect MPEG-4 media files, read box information, and output TOML format. 
+mpi is a rust-based application which can inspect MPEG-4 media files, read box information, and output TOML format.
 
 ```
 mpi 0.1.0
