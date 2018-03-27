@@ -79,14 +79,14 @@ pub fn run(matches: ArgMatches) -> Result<(), Box<::std::error::Error>> {
                     println!("[media.track.video.dimension]");
                     println!("width = {:?}", _v.width);
                     println!("height = {:?}", _v.height);
-                    
+
                     let thb = track.tkhd.unwrap(); // TrackHeaderBox
                     println!("[media.track.video.header]");
                     println!("disabled = {:?}", thb.disabled);
                     println!("duration = {:?}", thb.duration);
                     println!("width = {:?}", thb.width);
                     println!("height = {:?}", thb.height);
-                    
+
                     let mut vcsd = HashMap::new(); // VideoCodecSpecific data
                     let codec = match _v.codec_specific {
                         mp4parse::VideoCodecSpecific::AVCConfig(_v) => "AVC",
@@ -174,7 +174,7 @@ pub fn run(matches: ArgMatches) -> Result<(), Box<::std::error::Error>> {
                 Some(mp4parse::SampleEntry::Unknown) |
                 None => {}
             }
-            // 
+            //
         }
     }
     println!("");
@@ -187,20 +187,51 @@ pub const TESTS_SMALL: [u8; 8] = [0x00, 0x00, 0x00, 0x20, 0x66, 0x74, 0x79, 0x70
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::env;
+    use std::path::PathBuf;
+    use std::path::Path;
+    use std::ffi::OsStr;
+
+    fn get_project_dir() -> PathBuf {
+        let bin = env::current_exe().expect("bin path");
+        let mut target_dir = PathBuf::from(bin.parent().expect("bin parent"));
+        while target_dir.file_name() != Some(OsStr::new("target")) {
+            target_dir.pop();
+        }
+        target_dir.pop();
+        target_dir
+    }
+
+    fn get_full_path(path: String) -> PathBuf {
+        let mut project_dir: PathBuf = get_project_dir();
+        project_dir.push(path);
+        println!("get_full_path = {}", project_dir.to_string_lossy());
+        project_dir
+    }
+
+    fn get_full_path_as_string(path: String) -> String {
+        let full_path = get_full_path(path);
+        full_path.into_os_string().into_string().unwrap()
+    }
+
     #[test]
-    fn process_file() {
+    fn unit_process_file() {
         let filename = String::from("tests/files/test-bokeh-au-0t-vd-30f-854x480.mp4");
-        let config = Media::new(filename).unwrap();
+        let project_dir = get_full_path(filename);
+        let file_path = project_dir.into_os_string().into_string().unwrap(); // project_dir.to_string_lossy();
+        let config = Media::new(file_path.clone()).unwrap();
         assert_eq!(
             config.filename,
-            "tests/files/test-bokeh-au-0t-vd-30f-854x480.mp4"
+            file_path.clone()
         );
     }
     #[test]
-    fn args() {
+    fn unit_args() {
+        let filename = String::from("tests/files/test-bokeh-au-0t-vd-30f-854x480.mp4");
+        let file_path = get_full_path_as_string(filename.clone());
         let args: Vec<String> = vec![
             String::from("mpi"),
-            String::from("tests/files/test-bokeh-au-2t-vd-30f-854x480.mp4"),
+            filename.clone(),
         ];
         assert_eq!(args.len(), 2);
     }
