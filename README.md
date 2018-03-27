@@ -1,4 +1,6 @@
 # mpi
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fsitkevij%2Fmpi.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fsitkevij%2Fmpi?ref=badge_shield)
+
 
 mpi is a rust-based application which can inspect MPEG-4 media files, read box information, and output TOML format.
 
@@ -76,3 +78,7 @@ height = 29491200
 [media.track.video.codec]
 codec_name = "AVC"
 ```
+
+
+## License
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fsitkevij%2Fmpi.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fsitkevij%2Fmpi?ref=badge_large)
