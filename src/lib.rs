@@ -217,8 +217,10 @@ mod tests {
     #[test]
     fn unit_process_file() {
         let filename = String::from("tests/files/test-bokeh-au-0t-vd-30f-854x480.mp4");
-        let project_dir = get_full_path(filename);
-        let file_path = project_dir.into_os_string().into_string().unwrap(); // project_dir.to_string_lossy();
+        let file_path = get_full_path_as_string(filename.clone());
+
+        assert_eq!(Path::new(&String::from(filename.clone())).exists(), true);
+
         let config = Media::new(file_path.clone()).unwrap();
         assert_eq!(
             config.filename,
@@ -228,7 +230,7 @@ mod tests {
     #[test]
     fn unit_args() {
         let filename = String::from("tests/files/test-bokeh-au-0t-vd-30f-854x480.mp4");
-        let file_path = get_full_path_as_string(filename.clone());
+        // let file_path = get_full_path_as_string(filename.clone());
         let args: Vec<String> = vec![
             String::from("mpi"),
             filename.clone(),
