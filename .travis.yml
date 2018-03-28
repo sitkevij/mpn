@@ -8,5 +8,8 @@ matrix:
   allow_failures:
     - rust: nightly
 script:
+  - cargo install -f rustfmt || cargo fmt -- --version || exit 0
   - cargo build --verbose --all
   - cargo test --verbose --all -- --nocapture
+  - cargo build --release --verbose
+  - cargo test --release --verbose
