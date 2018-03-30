@@ -214,6 +214,7 @@ mod tests {
         full_path.into_os_string().into_string().unwrap()
     }
 
+    /// travis: git clone --depth=50 --branch=master https://github.com/sitkevij/mpi.git sitkevij/mpi
     #[test]
     fn unit_process_file() {
         let filename = String::from("tests/files/test-bokeh-au-0t-vd-30f-854x480.mp4");

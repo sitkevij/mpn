@@ -10,7 +10,9 @@ matrix:
 before_install:
   - sudo apt-get -qq update
   - sudo apt-get install -y tree
+  - tree ~
   - tree
+  - ls -l /home/travis/build/sitkevij/mpi/tests/files/test-bokeh-au-0t-vd-30f-854x480.mp4
 script:
   - tree
   - cargo install -f rustfmt || cargo fmt -- --version || exit 0
