@@ -1,4 +1,12 @@
+#![deny(missing_docs,
+        missing_debug_implementations, missing_copy_implementations,
+        trivial_casts, trivial_numeric_casts,
+        unsafe_code,
+        unstable_features,
+        unused_import_braces, unused_qualifications)]
 // #![allow(warnings)]
+
+//! mpi main lib
 extern crate mp4parse;
 extern crate filetime;
 extern crate clap;
@@ -11,18 +19,34 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::{Cursor, Read};
 use std::vec::Vec;
+use std::fmt;
+use std::fmt::Debug;
+use std::fmt::Formatter;
 
 /// Media struct which holds file metadata
 pub struct Media {
+    /// filename
     pub filename: String,
+    /// file creation time
     pub creation_time: i64,
+    /// file last accessed time
     pub last_accessed_time: i64,
+    /// file last modified time
     pub last_modified_time: i64,
+    /// file preview in bytes
+    //#[derive(Debug)]
     pub preview: [u8; 256],
+}
+
+impl Debug for Media {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        write!(f, "{}", self.preview[0])
+    }
 }
 
 /// Media implementation
 impl Media {
+    /// constructor
     pub fn new(filename: String) -> Result<Media, Box<::std::error::Error>> {
         let preview: [u8; 256] = [0x0; 256];
         let metadata = fs::metadata(filename.clone()).unwrap();
@@ -134,7 +158,7 @@ pub fn run(matches: ArgMatches) -> Result<(), Box<::std::error::Error>> {
                             // @see http://siciarz.net/24-days-of-rust-anymap/
                             acsd.insert(
                                 String::from("esds.audio_sample_rate"),
-                                esds.audio_sample_rate.unwrap() as u32,
+                                esds.audio_sample_rate.unwrap(),
                             );
                             acsd.insert(
                                 String::from("esds.audio_object_type"),
@@ -181,7 +205,8 @@ pub fn run(matches: ArgMatches) -> Result<(), Box<::std::error::Error>> {
     Ok(())
 }
 
-pub const TESTS_SMALL: [u8; 8] = [0x00, 0x00, 0x00, 0x20, 0x66, 0x74, 0x79, 0x70];
+/// bit array for testing
+//  pub const TESTS_SMALL: [u8; 8] = [0x00, 0x00, 0x00, 0x20, 0x66, 0x74, 0x79, 0x70];
 
 /// @see (https://doc.rust-lang.org/book/second-edition/ch11-03-test-organization.html)
 #[cfg(test)]
@@ -223,19 +248,13 @@ mod tests {
         // assert_eq!(Path::new(&String::from(file_path.clone())).exists(), true);
 
         let config = Media::new(file_path.clone()).unwrap();
-        assert_eq!(
-            config.filename,
-            file_path.clone()
-        );
+        assert_eq!(config.filename, file_path.clone());
     }
     #[test]
     fn unit_args() {
         let filename = String::from("tests/files/test-bokeh-au-0t-vd-30f-854x480.mp4");
         // let file_path = get_full_path_as_string(filename.clone());
-        let args: Vec<String> = vec![
-            String::from("mpi"),
-            filename.clone(),
-        ];
+        let args: Vec<String> = vec![String::from("mpi"), filename.clone()];
         assert_eq!(args.len(), 2);
     }
 }
