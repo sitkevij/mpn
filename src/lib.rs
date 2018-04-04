@@ -211,52 +211,67 @@ pub fn run(matches: ArgMatches) -> Result<(), Box<::std::error::Error>> {
 #[cfg(test)]
 mod tests {
     extern crate assert_cli;
+    extern crate tempfile;
+
+    /// cargo test -- --nocapture
 
     use super::*;
-    // use std::env;
-    // use std::path::PathBuf;
+    use std::env;
+    use std::fs::File;
+    use std::io::prelude::*;
+    use self::tempfile::tempdir;
     // use std::path::Path;
     // use std::ffi::OsStr;
 
-    // fn get_project_dir() -> PathBuf {
-    //     let bin = env::current_exe().expect("bin path");
-    //     let mut target_dir = PathBuf::from(bin.parent().expect("bin parent"));
-    //     while target_dir.file_name() != Some(OsStr::new("target")) {
-    //         target_dir.pop();
-    //     }
-    //     target_dir.pop();
-    //     target_dir
-    // }
-
-    // fn get_full_path(path: String) -> PathBuf {
-    //     let mut project_dir: PathBuf = get_project_dir();
-    //     project_dir.push(path);
-    //     println!("get_full_path = {}", project_dir.to_string_lossy());
-    //     project_dir
-    // }
-
-    // fn get_full_path_as_string(path: String) -> String {
-    //     let full_path = get_full_path(path);
-    //     if full_path.exists() && full_path.is_file() {
-    //         println!(
-    //             "get_full_path_as_string = {:?}",
-    //             full_path.clone().into_os_string()
-    //         );
-    //     } else {
-    //         println!("{}", "FILE PATH DOES NOT EXIST");
-    //     }
-    //     full_path.into_os_string().clone().into_string().unwrap()
-    // }
-
     /// travis: git clone --depth=50 --branch=master https://github.com/sitkevij/mpi.git sitkevij/mpi
-    // #[test]
-    // fn unit_process_file() {
-    //     let filename = String::from("tests/files/test-bokeh-au-0t-vd-30f-854x480.mp4");
-    //     let file_path = get_full_path_as_string(filename.clone());
-    //     // assert_eq!(Path::new(&String::from(file_path.clone())).exists(), true);
-    //     let config = Media::new(file_path.clone()).unwrap();
-    //     assert_eq!(config.filename, file_path.clone());
-    // }
+    // Write
+    #[test]
+    fn unit_cli_pre_write_temp() {
+        let mut file: File = tempfile::tempfile().unwrap();
+        println!("{:?}", env::temp_dir());
+        file.write_all(b"mpi unit test, test file write.");
+        println!("{:?}", env::temp_dir());
+        drop(file);
+    }
+
+    #[test]
+    fn unit_cli_pre_write_temp_filename() {
+        let file_path = "mpi-unit-test.txt";
+        let path = env::temp_dir().join(file_path);
+        let mut file = File::create(path).expect("Unable to create temporary test file");
+        file.write_all(b"mpi unit test, test file write.");
+        drop(file);
+    }
+
+    #[test]
+    fn unit_cli_pre_write_temp_mp4() {
+        let file_path = "mpi-unit-test.mp4";
+        let path = env::temp_dir().join(file_path);
+        let mut file = File::create(path).expect("Unable to create temporary test mp4 file");
+        //0x00, 0x00, 0x00, 0x20, 0x66, 0x74, 0x79, 0x70, 0x4d, 0x34, 0x56, 0x20,
+        let bokeh_au_2t_vd_30f_854x480_mp4: [u8; 12] = [
+            0x00,
+            0x00,
+            0x00,
+            0x20,
+            0x66,
+            0x74,
+            0x79,
+            0x70,
+            0x4d,
+            0x34,
+            0x56,
+            0x20,
+        ];
+        file.write_all(&bokeh_au_2t_vd_30f_854x480_mp4);
+        drop(file);
+    }
+
+    #[test]
+    fn unit_write_temp_dir_and_file() {
+        let dir = tempdir();
+        // let file_path = dir.path().join("temp.txt").expect("Unable to open");
+    }
 
     #[test]
     fn unit_args() {
@@ -326,7 +341,18 @@ mod tests {
             .with_args(&["tests/files/test-bokeh-au-0t-vd-30f-854x480.mp4"])
             .and()
             .stdout()
-            .not().contains("[media.track.audio]")
+            .not()
+            .contains("[media.track.audio]")
+            .unwrap();
+    }
+
+    #[test]
+    fn unit_cli_assert_cli() {
+        assert_cli::Assert::command(&["ls", "foo"])
+            .fails()
+            .and()
+            .stderr()
+            .contains("foo")
             .unwrap();
     }
 
@@ -352,14 +378,4 @@ mod tests {
     // height = 29491200
     // [media.track.video.codec]
     // codec_name = "AVC"
-
-    #[test]
-    fn unit_cli_assert_cli() {
-        assert_cli::Assert::command(&["ls", "foo"])
-            .fails()
-            .and()
-            .stderr()
-            .contains("foo")
-            .unwrap();
-    }
 }
