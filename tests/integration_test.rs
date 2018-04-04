@@ -1,5 +1,6 @@
 extern crate mpi;
 extern crate mp4parse;
+extern crate assert_cli;
 
 mod common;
 

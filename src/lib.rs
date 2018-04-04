@@ -34,7 +34,6 @@ pub struct Media {
     /// file last modified time
     pub last_modified_time: i64,
     /// file preview in bytes
-    //#[derive(Debug)]
     pub preview: [u8; 256],
 }
 
@@ -49,6 +48,7 @@ impl Media {
     /// constructor
     pub fn new(filename: String) -> Result<Media, Box<::std::error::Error>> {
         let preview: [u8; 256] = [0x0; 256];
+        // println!("Media.new filename={}", filename);
         let metadata = fs::metadata(filename.clone()).unwrap();
         let ctime = filetime::FileTime::from_creation_time(&metadata).unwrap();
         let mtime = filetime::FileTime::from_last_modification_time(&metadata);
@@ -207,54 +207,159 @@ pub fn run(matches: ArgMatches) -> Result<(), Box<::std::error::Error>> {
 
 /// bit array for testing
 //  pub const TESTS_SMALL: [u8; 8] = [0x00, 0x00, 0x00, 0x20, 0x66, 0x74, 0x79, 0x70];
-
 /// @see (https://doc.rust-lang.org/book/second-edition/ch11-03-test-organization.html)
 #[cfg(test)]
 mod tests {
+    extern crate assert_cli;
+
     use super::*;
-    use std::env;
-    use std::path::PathBuf;
-    use std::path::Path;
-    use std::ffi::OsStr;
+    // use std::env;
+    // use std::path::PathBuf;
+    // use std::path::Path;
+    // use std::ffi::OsStr;
 
-    fn get_project_dir() -> PathBuf {
-        let bin = env::current_exe().expect("bin path");
-        let mut target_dir = PathBuf::from(bin.parent().expect("bin parent"));
-        while target_dir.file_name() != Some(OsStr::new("target")) {
-            target_dir.pop();
-        }
-        target_dir.pop();
-        target_dir
-    }
+    // fn get_project_dir() -> PathBuf {
+    //     let bin = env::current_exe().expect("bin path");
+    //     let mut target_dir = PathBuf::from(bin.parent().expect("bin parent"));
+    //     while target_dir.file_name() != Some(OsStr::new("target")) {
+    //         target_dir.pop();
+    //     }
+    //     target_dir.pop();
+    //     target_dir
+    // }
 
-    fn get_full_path(path: String) -> PathBuf {
-        let mut project_dir: PathBuf = get_project_dir();
-        project_dir.push(path);
-        println!("get_full_path = {}", project_dir.to_string_lossy());
-        project_dir
-    }
+    // fn get_full_path(path: String) -> PathBuf {
+    //     let mut project_dir: PathBuf = get_project_dir();
+    //     project_dir.push(path);
+    //     println!("get_full_path = {}", project_dir.to_string_lossy());
+    //     project_dir
+    // }
 
-    fn get_full_path_as_string(path: String) -> String {
-        let full_path = get_full_path(path);
-        full_path.into_os_string().into_string().unwrap()
-    }
+    // fn get_full_path_as_string(path: String) -> String {
+    //     let full_path = get_full_path(path);
+    //     if full_path.exists() && full_path.is_file() {
+    //         println!(
+    //             "get_full_path_as_string = {:?}",
+    //             full_path.clone().into_os_string()
+    //         );
+    //     } else {
+    //         println!("{}", "FILE PATH DOES NOT EXIST");
+    //     }
+    //     full_path.into_os_string().clone().into_string().unwrap()
+    // }
 
     /// travis: git clone --depth=50 --branch=master https://github.com/sitkevij/mpi.git sitkevij/mpi
-    #[test]
-    fn unit_process_file() {
-        let filename = String::from("tests/files/test-bokeh-au-0t-vd-30f-854x480.mp4");
-        let file_path = get_full_path_as_string(filename.clone());
+    // #[test]
+    // fn unit_process_file() {
+    //     let filename = String::from("tests/files/test-bokeh-au-0t-vd-30f-854x480.mp4");
+    //     let file_path = get_full_path_as_string(filename.clone());
+    //     // assert_eq!(Path::new(&String::from(file_path.clone())).exists(), true);
+    //     let config = Media::new(file_path.clone()).unwrap();
+    //     assert_eq!(config.filename, file_path.clone());
+    // }
 
-        // assert_eq!(Path::new(&String::from(file_path.clone())).exists(), true);
-
-        let config = Media::new(file_path.clone()).unwrap();
-        assert_eq!(config.filename, file_path.clone());
-    }
     #[test]
     fn unit_args() {
         let filename = String::from("tests/files/test-bokeh-au-0t-vd-30f-854x480.mp4");
-        // let file_path = get_full_path_as_string(filename.clone());
         let args: Vec<String> = vec![String::from("mpi"), filename.clone()];
         assert_eq!(args.len(), 2);
+    }
+
+    #[test]
+    fn unit_cli_missing_params() {
+        assert_cli::Assert::main_binary()
+            .fails()
+            .and()
+            .stderr()
+            .contains("The following required arguments were not provided")
+            .unwrap();
+    }
+
+    #[test]
+    fn unit_cli_wrong_file() {
+        assert_cli::Assert::main_binary()
+            .with_args(&["tests/files/no_file.found"])
+            .fails()
+            .unwrap();
+    }
+
+    #[test]
+    fn unit_cli_valid_file() {
+        assert_cli::Assert::main_binary()
+            .with_args(&["tests/files/test-bokeh-au-0t-vd-30f-854x480.mp4"])
+            .unwrap();
+    }
+
+    #[test]
+    fn unit_cli_valid_stdout_dimensions() {
+        assert_cli::Assert::main_binary()
+            .with_args(&["tests/files/test-bokeh-au-0t-vd-30f-854x480.mp4"])
+            .and()
+            .stdout()
+            .contains("width = 854")
+            .unwrap();
+    }
+
+    #[test]
+    fn unit_cli_valid_stdout_codec() {
+        assert_cli::Assert::main_binary()
+            .with_args(&["tests/files/test-bokeh-au-0t-vd-30f-854x480.mp4"])
+            .and()
+            .stdout()
+            .contains("codec_name = \"AVC\"")
+            .unwrap();
+    }
+
+    #[test]
+    fn unit_cli_valid_stdout_track() {
+        assert_cli::Assert::main_binary()
+            .with_args(&["tests/files/test-bokeh-au-0t-vd-30f-854x480.mp4"])
+            .and()
+            .stdout()
+            .contains("[media.track.video]")
+            .unwrap();
+    }
+
+    #[test]
+    fn unit_cli_valid_stdout_no_audio() {
+        assert_cli::Assert::main_binary()
+            .with_args(&["tests/files/test-bokeh-au-0t-vd-30f-854x480.mp4"])
+            .and()
+            .stdout()
+            .not().contains("[media.track.audio]")
+            .unwrap();
+    }
+
+    // [media]
+    // uri = "tests/files/test-bokeh-au-0t-vd-30f-854x480.mp4"
+    // Media.new filename=tests/files/test-bokeh-au-0t-vd-30f-854x480.mp4
+    // creation_time = "2018-03-13 16:20:49 UTC"
+    // last_modified_time = "2018-03-13 16:20:49 UTC"
+    // last_accessed_time = "2018-04-04 15:19:56 UTC"
+    // [media.track.video]
+    // track_id = "1"
+    // duration = "TrackScaledTime(30, 0)"
+    // empty_duration = "MediaScaledTime(0)"
+    // media_time = "TrackScaledTime(1, 0)"
+    // timescale = "TrackTimeScale(30, 0)"
+    // [media.track.video.dimension]
+    // width = 854
+    // height = 450
+    // [media.track.video.header]
+    // disabled = true
+    // duration = 30
+    // width = 55967744
+    // height = 29491200
+    // [media.track.video.codec]
+    // codec_name = "AVC"
+
+    #[test]
+    fn unit_cli_assert_cli() {
+        assert_cli::Assert::command(&["ls", "foo"])
+            .fails()
+            .and()
+            .stderr()
+            .contains("foo")
+            .unwrap();
     }
 }

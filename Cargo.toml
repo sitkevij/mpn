@@ -26,3 +26,6 @@ mp4parse = "0.10.0"
 clap = "2.31.1"
 filetime = "0.1"
 chrono = "0.4"
+
+[dev-dependencies]
+assert_cli = "0.5"
