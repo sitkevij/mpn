@@ -1,6 +1,7 @@
 extern crate mpi;
 extern crate mp4parse;
 extern crate assert_cli;
+extern crate reqwest;
 
 mod common;
 
@@ -8,6 +9,8 @@ use std::env;
 use std::path::PathBuf;
 use std::path::Path;
 use std::ffi::OsStr;
+use std::fs::File;
+// use std::io::prelude::*;
 
 fn get_project_dir() -> PathBuf {
     let bin = env::current_exe().expect("bin path");
@@ -31,28 +34,80 @@ fn get_full_path_as_string(path: String) -> String {
     full_path.into_os_string().into_string().unwrap()
 }
 
+fn get_test_file() -> std::ffi::OsString {
+    let file_path = "au-0t-vd-30f.mp4";
+    let path = env::temp_dir().join(file_path);
+    if Path::new(&path).exists() == false {
+        let mut file = File::create(path).expect("Unable to create temporary test mp4 file");
+        let mut res = reqwest::get("https://raw.githubusercontent.com/sitkevij/mpi/master/tests/files/test-bokeh-au-0t-vd-30f-854x480.mp4").expect("request failed");
+
+        println!("Status: {}", res.status());
+        println!("Headers:\n{}", res.headers());
+
+        assert_eq!(res.status(), reqwest::StatusCode::Ok);
+
+        // let _ = std::io::copy(&mut res, &mut std::io::stdout()).expect("copy stream failed");
+        let _ = std::io::copy(&mut res, &mut file).expect("copy stream failed");
+    }
+    env::temp_dir().join(file_path).into_os_string()
+}
+///
+/// begin tests
+///
+#[test]
+fn integ_cli_valid_file() {
+    assert_cli::Assert::main_binary().with_args(&[get_test_file().to_str().unwrap()]);
+}
+
+#[test]
+fn integ_cli_valid_stdout_dimensions() {
+    assert_cli::Assert::main_binary()
+        // .with_args(&["tests/files/test-bokeh-au-0t-vd-30f-854x480.mp4"])
+        .with_args(&[get_test_file().to_str().unwrap()])
+        .and()
+        .stdout()
+        .contains("width = 854")
+        .unwrap();
+}
+
+#[test]
+fn integ_cli_valid_stdout_codec() {
+    assert_cli::Assert::main_binary()
+        .with_args(&[get_test_file().to_str().unwrap()])
+        .and()
+        .stdout()
+        .contains("codec_name = \"AVC\"")
+        .unwrap();
+}
+
+#[test]
+fn integ_cli_valid_stdout_track() {
+    assert_cli::Assert::main_binary()
+        .with_args(&[get_test_file().to_str().unwrap()])
+        .and()
+        .stdout()
+        .contains("[media.track.video]")
+        .unwrap();
+}
+
+#[test]
+fn integ_cli_valid_stdout_no_audio() {
+    assert_cli::Assert::main_binary()
+        .with_args(&[get_test_file().to_str().unwrap()])
+        .and()
+        .stdout()
+        .not()
+        .contains("[media.track.audio]")
+        .unwrap();
+}
+
 #[test]
 fn filename() {
     common::setup();
-
-    // We assume that we are in a valid directory.
-    // let p = env::current_dir().unwrap();
-    // let bin = env::current_exe().unwrap();
-    // println!("bin: {}, current directory: {}", bin.display(), p.display());
-    // let mut project_dir: PathBuf = get_project_dir();
-    // project_dir.push("tests/files/test-bokeh-au-2t-vd-30f-854x480.mp4");
-    // let filename = get_full_path_as_string( String::from("tests/files/test-bokeh-au-2t-vd-30f-854x480.mp4") );
-
-    let project_dir = get_full_path(String::from(
-        "tests/files/test-bokeh-au-2t-vd-30f-854x480.mp4",
-    ));
-    let filename = project_dir.into_os_string().into_string().unwrap(); // project_dir.to_string_lossy();
-
+    let filename = get_test_file().into_string().unwrap();
     let args: Vec<String> = vec![String::from("mpi"), String::from(filename.clone())];
+
     assert_eq!(args.len(), 2);
-
-    // assert_eq!(project_dir.clone().exists(), true);
-
     assert_eq!(Path::new(&String::from(filename.clone())).exists(), true);
 
     let filename = String::from(filename.clone());
@@ -63,18 +118,17 @@ fn filename() {
 #[test]
 fn noaudio_media() {
     common::setup();
-    let filename = String::from("tests/files/test-bokeh-au-0t-vd-30f-854x480.mp4");
-    let file_path = get_full_path_as_string(filename);
-    let config = mpi::Media::new(file_path.clone()).unwrap();
-    assert_eq!(config.filename, file_path);
+    let filename = get_test_file().into_string().unwrap();
+    // let file_path = get_full_path_as_string(filename);
+    let config = mpi::Media::new(filename.clone()).unwrap();
+    assert_eq!(config.filename, filename);
 }
 
 /// if need by, run with: cargo test -- --nocapture
 #[test]
 fn media_created() {
     common::setup();
-    let filename = String::from("tests/files/test-bokeh-au-0t-vd-30f-854x480.mp4");
-    let file_path = get_full_path_as_string(filename);
+    let file_path = get_test_file().into_string().unwrap();
     let config = mpi::Media::new(file_path.clone()).unwrap();
     println!("creation_time = {}", config.creation_time);
     assert!(config.creation_time > 0);

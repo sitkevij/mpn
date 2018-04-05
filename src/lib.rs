@@ -229,8 +229,7 @@ mod tests {
     fn unit_cli_pre_write_temp() {
         let mut file: File = tempfile::tempfile().unwrap();
         println!("{:?}", env::temp_dir());
-        file.write_all(b"mpi unit test, test file write.");
-        println!("{:?}", env::temp_dir());
+        file.write_all(b"mpi unit test, test file write.").expect("unable to write test file");
         drop(file);
     }
 
@@ -239,7 +238,7 @@ mod tests {
         let file_path = "mpi-unit-test.txt";
         let path = env::temp_dir().join(file_path);
         let mut file = File::create(path).expect("Unable to create temporary test file");
-        file.write_all(b"mpi unit test, test file write.");
+        file.write_all(b"mpi unit test, test file write.").expect("unable to write test file");
         drop(file);
     }
 
@@ -263,15 +262,47 @@ mod tests {
             0x56,
             0x20,
         ];
-        file.write_all(&bokeh_au_2t_vd_30f_854x480_mp4);
+        file.write_all(&bokeh_au_2t_vd_30f_854x480_mp4).expect("unable to write test file");
         drop(file);
     }
 
     #[test]
-    fn unit_write_temp_dir_and_file() {
-        let dir = tempdir();
-        // let file_path = dir.path().join("temp.txt").expect("Unable to open");
+    #[should_panic]
+    fn unit_cli_invalid_mp4_eof() {
+        let file_path = "mpi-unit-test-invalid.mp4";
+        let path = env::temp_dir().join(file_path);
+        let mut file = File::create(path).expect("Unable to create temporary test mp4 file");
+        // 0x00, 0x00, 0x00, 0x20, 0x66, 0x74, 0x79, 0x70, 0x4d, 0x34, 0x56, 0x20,
+        let bokeh_au_2t_vd_30f_854x480_mp4: [u8; 12] = [
+            0x00,
+            0x00,
+            0x00,
+            0x20,
+            0x66,
+            0x74,
+            0x79,
+            0x70,
+            0x4d,
+            0x34,
+            0x56,
+            0x20,
+        ];
+        file.write_all(&bokeh_au_2t_vd_30f_854x480_mp4).expect("unable to write test file");
+        let file_param = env::temp_dir().join(file_path).into_os_string();
+        assert_cli::Assert::main_binary()
+            .with_args(&[file_param.to_str().unwrap()])
+            .and()
+            .stderr()
+            .contains("UnexpectedEOF")
+            .unwrap();
+        drop(file);
     }
+
+    // #[test]
+    // fn unit_write_temp_dir_and_file() {
+    //     let dir = tempdir();
+    //     let file_path = dir.path().join("temp.txt").expect("Unable to open");
+    // }
 
     #[test]
     fn unit_args() {
@@ -298,67 +329,8 @@ mod tests {
             .unwrap();
     }
 
-    #[test]
-    fn unit_cli_valid_file() {
-        assert_cli::Assert::main_binary()
-            .with_args(&["tests/files/test-bokeh-au-0t-vd-30f-854x480.mp4"])
-            .unwrap();
-    }
-
-    #[test]
-    fn unit_cli_valid_stdout_dimensions() {
-        assert_cli::Assert::main_binary()
-            .with_args(&["tests/files/test-bokeh-au-0t-vd-30f-854x480.mp4"])
-            .and()
-            .stdout()
-            .contains("width = 854")
-            .unwrap();
-    }
-
-    #[test]
-    fn unit_cli_valid_stdout_codec() {
-        assert_cli::Assert::main_binary()
-            .with_args(&["tests/files/test-bokeh-au-0t-vd-30f-854x480.mp4"])
-            .and()
-            .stdout()
-            .contains("codec_name = \"AVC\"")
-            .unwrap();
-    }
-
-    #[test]
-    fn unit_cli_valid_stdout_track() {
-        assert_cli::Assert::main_binary()
-            .with_args(&["tests/files/test-bokeh-au-0t-vd-30f-854x480.mp4"])
-            .and()
-            .stdout()
-            .contains("[media.track.video]")
-            .unwrap();
-    }
-
-    #[test]
-    fn unit_cli_valid_stdout_no_audio() {
-        assert_cli::Assert::main_binary()
-            .with_args(&["tests/files/test-bokeh-au-0t-vd-30f-854x480.mp4"])
-            .and()
-            .stdout()
-            .not()
-            .contains("[media.track.audio]")
-            .unwrap();
-    }
-
-    #[test]
-    fn unit_cli_assert_cli() {
-        assert_cli::Assert::command(&["ls", "foo"])
-            .fails()
-            .and()
-            .stderr()
-            .contains("foo")
-            .unwrap();
-    }
-
     // [media]
     // uri = "tests/files/test-bokeh-au-0t-vd-30f-854x480.mp4"
-    // Media.new filename=tests/files/test-bokeh-au-0t-vd-30f-854x480.mp4
     // creation_time = "2018-03-13 16:20:49 UTC"
     // last_modified_time = "2018-03-13 16:20:49 UTC"
     // last_accessed_time = "2018-04-04 15:19:56 UTC"
