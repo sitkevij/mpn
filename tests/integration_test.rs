@@ -80,15 +80,15 @@ fn integ_cli_valid_file() {
 //         .unwrap();
 // }
 
-#[test]
-fn integ_cli_valid_stdout_track() {
-    assert_cli::Assert::main_binary()
-        .with_args(&[get_test_file().to_str().unwrap()])
-        .and()
-        .stdout()
-        .contains("[media.track.video]")
-        .unwrap();
-}
+// #[test]
+// fn integ_cli_valid_stdout_track() {
+//     assert_cli::Assert::main_binary()
+//         .with_args(&[get_test_file().to_str().unwrap()])
+//         .and()
+//         .stdout()
+//         .contains("[media.track.video]")
+//         .unwrap();
+// }
 
 // #[test]
 // fn integ_cli_valid_stdout_no_audio() {
@@ -101,38 +101,38 @@ fn integ_cli_valid_stdout_track() {
 //         .unwrap();
 // }
 
-#[test]
-fn filename() {
-    common::setup();
-    let filename = get_test_file().into_string().unwrap();
-    let args: Vec<String> = vec![String::from("mpi"), String::from(filename.clone())];
+// #[test]
+// fn filename() {
+//     common::setup();
+//     let filename = get_test_file().into_string().unwrap();
+//     let args: Vec<String> = vec![String::from("mpi"), String::from(filename.clone())];
 
-    assert_eq!(args.len(), 2);
-    // assert_eq!(Path::new(&String::from(filename.clone())).exists(), true);
+//     assert_eq!(args.len(), 2);
+//     // assert_eq!(Path::new(&String::from(filename.clone())).exists(), true);
 
-    let filename = String::from(filename.clone());
-    let config = mpi::Media::new(filename.clone()).unwrap();
-    assert_eq!(config.filename, filename.clone());
-}
+//     let filename = String::from(filename.clone());
+//     let config = mpi::Media::new(filename.clone()).unwrap();
+//     assert_eq!(config.filename, filename.clone());
+// }
 
-#[test]
-fn noaudio_media() {
-    common::setup();
-    let filename = get_test_file().into_string().unwrap();
-    // let file_path = get_full_path_as_string(filename);
-    let config = mpi::Media::new(filename.clone()).unwrap();
-    assert_eq!(config.filename, filename);
-}
+// #[test]
+// fn noaudio_media() {
+//     common::setup();
+//     let filename = get_test_file().into_string().unwrap();
+//     // let file_path = get_full_path_as_string(filename);
+//     let config = mpi::Media::new(filename.clone()).unwrap();
+//     assert_eq!(config.filename, filename);
+// }
 
 /// if need by, run with: cargo test -- --nocapture
-#[test]
-fn media_created() {
-    common::setup();
-    let file_path = get_test_file().into_string().unwrap();
-    let config = mpi::Media::new(file_path.clone()).unwrap();
-    println!("creation_time = {}", config.creation_time);
-    assert!(config.creation_time > 0);
-}
+// #[test]
+// fn media_created() {
+//     common::setup();
+//     let file_path = get_test_file().into_string().unwrap();
+//     let config = mpi::Media::new(file_path.clone()).unwrap();
+//     println!("creation_time = {}", config.creation_time);
+//     assert!(config.creation_time > 0);
+// }
 
 // #[test]
 // #[should_panic]

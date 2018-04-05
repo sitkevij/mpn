@@ -1,5 +1,5 @@
 language: rust
-env: RUST_BACKTRACE=full
+# env: RUST_BACKTRACE=full
 rust:
   - stable
   - beta
