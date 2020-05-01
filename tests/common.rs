@@ -1,4 +1,3 @@
-
 pub fn setup() {
     // -> Result<()> {
     // let mut res = reqwest::get("https://www.rust-lang.org/en-US/")?;

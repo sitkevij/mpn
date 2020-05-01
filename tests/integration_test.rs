@@ -1,15 +1,15 @@
-extern crate mpi;
-extern crate mp4parse;
 extern crate assert_cli;
+extern crate mp4parse;
+extern crate mpi;
 extern crate reqwest;
 
 mod common;
 
 use std::env;
-use std::path::PathBuf;
-use std::path::Path;
 use std::ffi::OsStr;
 use std::fs::File;
+// use std::path::Path;
+use std::path::PathBuf;
 // use std::io::prelude::*;
 
 fn get_project_dir() -> PathBuf {
