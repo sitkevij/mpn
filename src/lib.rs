@@ -98,6 +98,7 @@ pub fn run(matches: ArgMatches) -> Result<(), Box<dyn Error>> {
         mp4parse::read_mp4(&mut c, &mut context).expect("read_mp4 failed");
         for track in context.tracks {
             match track.data {
+                // Some(mp4parse::SampleEntry::Video(_v)) => {
                 Some(mp4parse::SampleEntry::Video(_v)) => {
                     println!("[media.track.video]");
                     println!("track_id = {:?}", track.track_id.unwrap());
