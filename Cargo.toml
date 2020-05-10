@@ -1,12 +1,12 @@
 [package]
 name = "mpi"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["author https://github.com/sitkevij"]
 description = "Rust-based MPEG-4 inspector with TOML output."
-homepage = "https://github.com/sitkevij/mpi"
 repository = "https://github.com/sitkevij/mpi"
 license = "MIT"
 readme = "README.md"
+edition = "2018"
 
 # The development profile, used for `cargo build`.
 [profile.dev]

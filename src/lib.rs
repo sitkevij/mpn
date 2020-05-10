@@ -1,27 +1,32 @@
-#![deny(missing_docs,
-        missing_debug_implementations, missing_copy_implementations,
-        trivial_casts, trivial_numeric_casts,
-        unsafe_code,
-        unstable_features,
-        unused_import_braces, unused_qualifications)]
+#![deny(
+    missing_docs,
+    missing_debug_implementations,
+    missing_copy_implementations,
+    trivial_casts,
+    trivial_numeric_casts,
+    unsafe_code,
+    unstable_features,
+    unused_import_braces,
+    unused_qualifications
+)]
 // #![allow(warnings)]
 
 //! mpi main lib
-extern crate mp4parse;
-extern crate filetime;
-extern crate clap;
 extern crate chrono;
+extern crate clap;
+extern crate filetime;
+extern crate mp4parse;
 
 use self::chrono::prelude::TimeZone;
 use clap::ArgMatches;
-use std::fs;
 use std::collections::HashMap;
-use std::fs::File;
-use std::io::{Cursor, Read};
-use std::vec::Vec;
+use std::error::Error;
 use std::fmt;
 use std::fmt::Debug;
 use std::fmt::Formatter;
+use std::fs;
+use std::fs::File;
+use std::io::{Cursor, Read};
 
 /// Media struct which holds file metadata
 pub struct Media {
@@ -46,7 +51,7 @@ impl Debug for Media {
 /// Media implementation
 impl Media {
     /// constructor
-    pub fn new(filename: String) -> Result<Media, Box<::std::error::Error>> {
+    pub fn new(filename: String) -> Result<Media, Box<dyn Error>> {
         let preview: [u8; 256] = [0x0; 256];
         // println!("Media.new filename={}", filename);
         let metadata = fs::metadata(filename.clone()).unwrap();
@@ -67,15 +72,15 @@ impl Media {
 /// Inspect mp4 file and output box metadata.
 /// # Arguments
 /// * `matches` - Argument matches from the command line input
-pub fn run(matches: ArgMatches) -> Result<(), Box<::std::error::Error>> {
-    // if let Some(ref file) = matches.value_of("MEDIAFILE") {
+pub fn run(matches: ArgMatches) -> Result<(), Box<dyn Error>> {
     if let Some(file) = matches.value_of("MEDIAFILE") {
         println!("[media]");
         println!("uri = \"{}\"", file);
-        let mut fd = try!(File::open(file));
+        let mut fd = File::open(file)?;
         let mut buf = Vec::new();
-        try!(fd.read_to_end(&mut buf));
+        let size = fd.read_to_end(&mut buf)?;
         let media = Media::new(file.to_string()).unwrap();
+        println!("bytes = {}", size);
         println!(
             "creation_time = \"{}\"",
             chrono::Utc.timestamp(media.creation_time, 0)
@@ -93,12 +98,13 @@ pub fn run(matches: ArgMatches) -> Result<(), Box<::std::error::Error>> {
         mp4parse::read_mp4(&mut c, &mut context).expect("read_mp4 failed");
         for track in context.tracks {
             match track.data {
+                // Some(mp4parse::SampleEntry::Video(_v)) => {
                 Some(mp4parse::SampleEntry::Video(_v)) => {
                     println!("[media.track.video]");
-                    println!("track_id = \"{:?}\"", track.track_id.unwrap());
-                    println!("duration = \"{:?}\"", track.duration.unwrap());
+                    println!("track_id = {:?}", track.track_id.unwrap());
+                    println!("duration = {:?}", track.duration.unwrap());
                     println!("empty_duration = \"{:?}\"", track.empty_duration.unwrap());
-                    println!("media_time = \"{:?}\"", track.media_time.unwrap());
+                    println!("media_time = \"{:?}\"", track.media_time.unwrap()); // 1 = 64 bit creation and modification times. 0 = 64 bit creation and modification times.
                     println!("timescale = \"{:?}\"", track.timescale.unwrap());
                     println!("[media.track.video.dimension]");
                     println!("width = {:?}", _v.width);
@@ -133,7 +139,7 @@ pub fn run(matches: ArgMatches) -> Result<(), Box<::std::error::Error>> {
                 }
                 Some(mp4parse::SampleEntry::Audio(a)) => {
                     println!("[media.track.audio]");
-                    println!("track_id = \"{:?}\"", track.track_id.unwrap());
+                    println!("track_id = {:?}", track.track_id.unwrap());
                     println!("duration = \"{:?}\"", track.duration.unwrap());
                     println!("empty_duration = \"{:?}\"", track.empty_duration.unwrap());
                     println!("media_time = \"{:?}\"", track.media_time.unwrap());
@@ -195,13 +201,12 @@ pub fn run(matches: ArgMatches) -> Result<(), Box<::std::error::Error>> {
                         println!("{} = {:?}", key, value);
                     }
                 }
-                Some(mp4parse::SampleEntry::Unknown) |
-                None => {}
+                Some(mp4parse::SampleEntry::Unknown) | None => {}
             }
             //
         }
     }
-    println!("");
+    println!();
     Ok(())
 }
 
@@ -214,8 +219,7 @@ mod tests {
     extern crate tempfile;
 
     /// cargo test -- --nocapture
-
-    use super::*;
+    // use super::*;
     use std::env;
     use std::fs::File;
     use std::io::prelude::*;
@@ -229,7 +233,8 @@ mod tests {
     fn unit_cli_pre_write_temp() {
         let mut file: File = tempfile::tempfile().unwrap();
         println!("{:?}", env::temp_dir());
-        file.write_all(b"mpi unit test, test file write.").expect("unable to write test file");
+        file.write_all(b"mpi unit test, test file write.")
+            .expect("unable to write test file");
         drop(file);
     }
 
@@ -238,7 +243,8 @@ mod tests {
         let file_path = "mpi-unit-test.txt";
         let path = env::temp_dir().join(file_path);
         let mut file = File::create(path).expect("Unable to create temporary test file");
-        file.write_all(b"mpi unit test, test file write.").expect("unable to write test file");
+        file.write_all(b"mpi unit test, test file write.")
+            .expect("unable to write test file");
         drop(file);
     }
 
@@ -249,20 +255,10 @@ mod tests {
         let mut file = File::create(path).expect("Unable to create temporary test mp4 file");
         //0x00, 0x00, 0x00, 0x20, 0x66, 0x74, 0x79, 0x70, 0x4d, 0x34, 0x56, 0x20,
         let bokeh_au_2t_vd_30f_854x480_mp4: [u8; 12] = [
-            0x00,
-            0x00,
-            0x00,
-            0x20,
-            0x66,
-            0x74,
-            0x79,
-            0x70,
-            0x4d,
-            0x34,
-            0x56,
-            0x20,
+            0x00, 0x00, 0x00, 0x20, 0x66, 0x74, 0x79, 0x70, 0x4d, 0x34, 0x56, 0x20,
         ];
-        file.write_all(&bokeh_au_2t_vd_30f_854x480_mp4).expect("unable to write test file");
+        file.write_all(&bokeh_au_2t_vd_30f_854x480_mp4)
+            .expect("unable to write test file");
         drop(file);
     }
 
@@ -274,20 +270,10 @@ mod tests {
         let mut file = File::create(path).expect("Unable to create temporary test mp4 file");
         // 0x00, 0x00, 0x00, 0x20, 0x66, 0x74, 0x79, 0x70, 0x4d, 0x34, 0x56, 0x20,
         let bokeh_au_2t_vd_30f_854x480_mp4: [u8; 12] = [
-            0x00,
-            0x00,
-            0x00,
-            0x20,
-            0x66,
-            0x74,
-            0x79,
-            0x70,
-            0x4d,
-            0x34,
-            0x56,
-            0x20,
+            0x00, 0x00, 0x00, 0x20, 0x66, 0x74, 0x79, 0x70, 0x4d, 0x34, 0x56, 0x20,
         ];
-        file.write_all(&bokeh_au_2t_vd_30f_854x480_mp4).expect("unable to write test file");
+        file.write_all(&bokeh_au_2t_vd_30f_854x480_mp4)
+            .expect("unable to write test file");
         let file_param = env::temp_dir().join(file_path).into_os_string();
         assert_cli::Assert::main_binary()
             .with_args(&[file_param.to_str().unwrap()])
