@@ -61,9 +61,9 @@ impl Media {
 
         Ok(Media {
             filename,
-            creation_time: ctime.seconds_relative_to_1970() as i64,
-            last_accessed_time: atime.seconds_relative_to_1970() as i64,
-            last_modified_time: mtime.seconds_relative_to_1970() as i64,
+            creation_time: ctime.unix_seconds(),
+            last_accessed_time: atime.unix_seconds(),
+            last_modified_time: mtime.unix_seconds(),
             preview,
         })
     }

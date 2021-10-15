@@ -42,9 +42,12 @@ fn get_test_file() -> std::ffi::OsString {
     let mut res = reqwest::get("https://raw.githubusercontent.com/sitkevij/mpi/master/tests/files/test-bokeh-au-0t-vd-30f-854x480.mp4").expect("request failed");
 
     println!("Status: {}", res.status());
-    println!("Headers:\n{}", res.headers());
+    println!("Headers:");
+    for (key, value) in &*res.headers() {
+            println!("{} / {}", key, value.to_str().unwrap());
+        }
 
-    assert_eq!(res.status(), reqwest::StatusCode::Ok);
+    assert_eq!(res.status(), reqwest::StatusCode::OK);
 
     // let _ = std::io::copy(&mut res, &mut std::io::stdout()).expect("copy stream failed");
     let _ = std::io::copy(&mut res, &mut file).expect("copy stream failed");
