@@ -23,11 +23,11 @@ codegen-units = 1
 
 [dependencies]
 mp4parse = "0.10.0"
-clap = "2.31.1"
-filetime = "0.1"
-chrono = "0.4"
+clap = "2.33.3"
+filetime = "0.2.15"
+chrono = "0.4.19"
 
 [dev-dependencies]
-assert_cli = "0.5"
-tempfile = "3"
-reqwest = "0.8.5"
+assert_cli = "0.6.3"
+tempfile = "3.2.0"
+reqwest = "0.9"
