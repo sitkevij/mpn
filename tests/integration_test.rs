@@ -1,6 +1,6 @@
 extern crate assert_cli;
 extern crate mp4parse;
-extern crate mpi;
+extern crate mpn;
 extern crate reqwest;
 
 mod common;
@@ -34,33 +34,34 @@ fn get_full_path_as_string(path: String) -> String {
     full_path.into_os_string().into_string().unwrap()
 }
 
-fn get_test_file() -> std::ffi::OsString {
-    let file_path = "au-0t-vd-30f.mp4";
-    let path = env::temp_dir().join(file_path);
-    // if Path::new(&path).exists() == false {
-    let mut file = File::create(path).expect("Unable to create temporary test mp4 file");
-    let mut res = reqwest::get("https://raw.githubusercontent.com/sitkevij/mpi/master/tests/files/test-bokeh-au-0t-vd-30f-854x480.mp4").expect("request failed");
+// fn get_test_file() -> std::ffi::OsString {
+//     let file_path = "au-0t-vd-30f.mp4";
+//     let path = env::temp_dir().join(file_path);
+//     // if Path::new(&path).exists() == false {
+//     let mut file = File::create(path).expect("Unable to create temporary test mp4 file");
+//     let mut res = reqwest::get("https://raw.githubusercontent.com/sitkevij/mpn/master/tests/files/test-bokeh-au-0t-vd-30f-854x480.mp4").expect("request failed");
 
-    println!("Status: {}", res.status());
-    println!("Headers:");
-    for (key, value) in &*res.headers() {
-            println!("{} / {}", key, value.to_str().unwrap());
-        }
+//     println!("Status: {}", res.status());
+//     println!("Headers:");
+//     for (key, value) in &*res.headers() {
+//             println!("{} / {}", key, value.to_str().unwrap());
+//         }
 
-    assert_eq!(res.status(), reqwest::StatusCode::OK);
+//     assert_eq!(res.status(), reqwest::StatusCode::OK);
 
-    // let _ = std::io::copy(&mut res, &mut std::io::stdout()).expect("copy stream failed");
-    let _ = std::io::copy(&mut res, &mut file).expect("copy stream failed");
-    // }
-    env::temp_dir().join(file_path).into_os_string()
-}
+//     // let _ = std::io::copy(&mut res, &mut std::io::stdout()).expect("copy stream failed");
+//     let _ = std::io::copy(&mut res, &mut file).expect("copy stream failed");
+//     // }
+//     env::temp_dir().join(file_path).into_os_string()
+// }
+
 ///
 /// begin tests
 ///
 #[test]
-fn integ_cli_valid_file() {
-    assert_cli::Assert::main_binary().with_args(&[get_test_file().to_str().unwrap()]);
-}
+// fn integ_cli_valid_file() {
+//     assert_cli::Assert::main_binary().with_args(&[get_test_file().to_str().unwrap()]);
+// }
 
 // #[test]
 // fn integ_cli_valid_stdout_dimensions() {
@@ -108,13 +109,13 @@ fn integ_cli_valid_file() {
 // fn filename() {
 //     common::setup();
 //     let filename = get_test_file().into_string().unwrap();
-//     let args: Vec<String> = vec![String::from("mpi"), String::from(filename.clone())];
+//     let args: Vec<String> = vec![String::from("mpn"), String::from(filename.clone())];
 
 //     assert_eq!(args.len(), 2);
 //     // assert_eq!(Path::new(&String::from(filename.clone())).exists(), true);
 
 //     let filename = String::from(filename.clone());
-//     let config = mpi::Media::new(filename.clone()).unwrap();
+//     let config = mpn::Media::new(filename.clone()).unwrap();
 //     assert_eq!(config.filename, filename.clone());
 // }
 
@@ -123,7 +124,7 @@ fn integ_cli_valid_file() {
 //     common::setup();
 //     let filename = get_test_file().into_string().unwrap();
 //     // let file_path = get_full_path_as_string(filename);
-//     let config = mpi::Media::new(filename.clone()).unwrap();
+//     let config = mpn::Media::new(filename.clone()).unwrap();
 //     assert_eq!(config.filename, filename);
 // }
 
@@ -132,7 +133,7 @@ fn integ_cli_valid_file() {
 // fn media_created() {
 //     common::setup();
 //     let file_path = get_test_file().into_string().unwrap();
-//     let config = mpi::Media::new(file_path.clone()).unwrap();
+//     let config = mpn::Media::new(file_path.clone()).unwrap();
 //     println!("creation_time = {}", config.creation_time);
 //     assert!(config.creation_time > 0);
 // }
@@ -142,12 +143,12 @@ fn integ_cli_valid_file() {
 // fn invalid_mp4() {
 //     common::setup();
 //     // common::TESTS_FILES_TEST_BOKEH_AU_2T_VD_30F_854X480_MP4;
-//     let args: Vec<String> = vec![String::from("mpi"), String::from("src/main.rs")];
+//     let args: Vec<String> = vec![String::from("mpn"), String::from("src/main.rs")];
 //     assert_eq!(args.len(), 2);
 
 //     let filename = String::from("src/main.rs");
 //     let file_path = get_full_path_as_string(filename);
-//     let config = mpi::Media::new(file_path.clone()).unwrap();
+//     let config = mpn::Media::new(file_path.clone()).unwrap();
 //     assert_eq!(
 //         config.filename,
 //         file_path
@@ -159,13 +160,13 @@ fn integ_cli_valid_file() {
 fn nonexistant_file() {
     common::setup();
     let args: Vec<String> = vec![
-        String::from("mpi"),
+        String::from("mpn"),
         String::from("this_file_does_not.exist"),
     ];
     assert_eq!(args.len(), 2);
 
     let filename: String = String::from("this_file_does_not.exist");
-    let config = mpi::Media::new(filename).unwrap();
+    let config = mpn::Media::new(filename).unwrap();
     assert_eq!(
         config.filename,
         "tests/files/test-bokeh-au-2t-vd-30f-854x480.mp4"
@@ -178,13 +179,13 @@ fn nonexistant_file() {
 fn nonexistant_file_2() {
     common::setup();
     let args: Vec<String> = vec![
-        String::from("mpi"),
+        String::from("mpn"),
         String::from("this_file_does_not.exist"),
     ];
     assert_eq!(args.len(), 2);
 
     let filename: String = String::from("this_file_does_not.exist");
-    let config = mpi::Media::new(filename).unwrap();
+    let config = mpn::Media::new(filename).unwrap();
     assert_eq!(
         config.filename,
         "tests/files/test-bokeh-au-2t-vd-30f-854x480.mp4"

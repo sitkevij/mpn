@@ -9,14 +9,18 @@ DEBUG_DIR = $(TARGET_DIR)/debug
 RELEASE_DIR = $(TARGET_DIR)/release
 RLS_DIR = $(TARGET_DIR)/rls
 INSTALL_DIR = /usr/local/bin
-BINARY = mpi
+BINARY = mpn
 
 all: fmt test clean
 
 fmt:
-	cargo fmt --verbose
+	cargo fmt --all --verbose
+
+fmt-check:
+	cargo fmt --all -- --check
 
 debug:
+	export RUSTFLAGS=""
 	cargo build
 
 release: test
@@ -25,8 +29,55 @@ release: test
 test:
 	cargo test --verbose --all -- --nocapture
 
+example:
+	cargo run --example simple
+
+dev-install-tools: cargo-install-tools python-install-tools
+
+cargo-install-tools:
+	cargo install cargo-bloat
+	cargo install cargo-deb
+	cargo install cargo-geiger
+	cargo install cargo-trend
+	cargo install cargo-show
+	cargo install cargo-outdated
+	cargo install cargo-edit
+	cargo install hyperfine
+	cargo install --list
+
+python-install-tools:
+	pip install codespell
+
+npm-install-tools:
+	npm install markdownlint-cli2 --global
+
+publish-dry-run:
+	cargo publish --dry-run
+	cargo package --list
+
+geiger:
+	cargo geiger
+
+tarpaulin:
+	# use docker as tarpaulin only supports x86_64 processors running linux
+	docker run --security-opt seccomp=unconfined -v "${PWD}:/volume" xd009642/tarpaulin
+	open tarpaulin-report.html
+
+grcov:
+	# grcov requires rust nightly for now
+	rm -rf target/debug/
+	# export RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off"
+	export CARGO_INCREMENTAL=0 && \
+	export RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Zpanic_abort_tests -Cpanic=abort" && \
+	export RUSTDOCFLAGS="-Cpanic=abort" && \
+	cargo +nightly build
+	cargo +nightly test --verbose
+	grcov ./target/debug/ -s . -t html --llvm --branch --ignore-not-existing -o ./target/debug/coverage/
+	open target/debug/coverage/index.html
+
 install: release debug test
-	cargo install --path .
+	cargo install --path . 
+	## cp $(RELEASE_DIR)/$(BINARY) $(INSTALL_DIR)/$(BINARY)
 
 install-force: clean release debug test
 	cargo install --path . --force
@@ -34,8 +85,38 @@ install-force: clean release debug test
 clippy:
 	cargo clippy
 
-docker:
-	docker build -t sitkevij/stretch-slim:$(BINARY)-0.2.0 .
+docker-build:
+	docker build -t sitkevij/mpn:latest .
+
+docker-run:
+	docker run -i sitkevij/mpn:latest
+
+deb:
+	cargo deb
+
+manpage:
+	target/debug/mpn --help >target/debug/mpn.1.txt
+	pandoc MANPAGE.md -s -t man
+	HELP=$(cat target/debug/mpn.1.txt)
+	echo "$HELP"
+	MANPAGE=$(cat MANPAGE.md)
+	# echo $MANPAGE | sed 's/$/\\n/g' | tr -d'\n'
+	pandoc --standalone --to man MANPAGE.md -o mpn.1
+	cp mpn.1 /usr/local/share/man/man1
+	man mpn
+
+lint: lint-clippy lint-format lint-markdown
+
+lint-clippy:
+	cargo clippy --workspace --all-targets --verbose
+	cargo clippy --workspace --all-targets --verbose --no-default-features
+	cargo clippy --workspace --all-targets --verbose --all-features
+
+lint-format:
+	cargo fmt --all -- --check
+
+lint-markdown:
+	markdownlint-cli2 --config .markdownlint.json *.md
 
 clean: ## Remove all artifacts
 	rm -rf $(DEBUG_DIR)

@@ -11,7 +11,7 @@
 )]
 // #![allow(warnings)]
 
-//! mpi main lib
+//! mpn main lib
 extern crate chrono;
 extern crate clap;
 extern crate filetime;
@@ -61,9 +61,9 @@ impl Media {
 
         Ok(Media {
             filename,
-            creation_time: ctime.unix_seconds(),
-            last_accessed_time: atime.unix_seconds(),
-            last_modified_time: mtime.unix_seconds(),
+            creation_time: ctime.seconds_relative_to_1970() as i64,
+            last_accessed_time: atime.seconds_relative_to_1970() as i64,
+            last_modified_time: mtime.seconds_relative_to_1970() as i64,
             preview,
         })
     }
@@ -227,30 +227,30 @@ mod tests {
     // use std::path::Path;
     // use std::ffi::OsStr;
 
-    /// travis: git clone --depth=50 --branch=master https://github.com/sitkevij/mpi.git sitkevij/mpi
+    /// travis: git clone --depth=50 --branch=master https://github.com/sitkevij/mpn.git sitkevij/mpn
     // Write
     #[test]
     fn unit_cli_pre_write_temp() {
         let mut file: File = tempfile::tempfile().unwrap();
         println!("{:?}", env::temp_dir());
-        file.write_all(b"mpi unit test, test file write.")
+        file.write_all(b"mpn unit test, test file write.")
             .expect("unable to write test file");
         drop(file);
     }
 
     #[test]
     fn unit_cli_pre_write_temp_filename() {
-        let file_path = "mpi-unit-test.txt";
+        let file_path = "mpn-unit-test.txt";
         let path = env::temp_dir().join(file_path);
         let mut file = File::create(path).expect("Unable to create temporary test file");
-        file.write_all(b"mpi unit test, test file write.")
+        file.write_all(b"mpn unit test, test file write.")
             .expect("unable to write test file");
         drop(file);
     }
 
     #[test]
     fn unit_cli_pre_write_temp_mp4() {
-        let file_path = "mpi-unit-test.mp4";
+        let file_path = "mpn-unit-test.mp4";
         let path = env::temp_dir().join(file_path);
         let mut file = File::create(path).expect("Unable to create temporary test mp4 file");
         //0x00, 0x00, 0x00, 0x20, 0x66, 0x74, 0x79, 0x70, 0x4d, 0x34, 0x56, 0x20,
@@ -265,7 +265,7 @@ mod tests {
     #[test]
     #[should_panic]
     fn unit_cli_invalid_mp4_eof() {
-        let file_path = "mpi-unit-test-invalid.mp4";
+        let file_path = "mpn-unit-test-invalid.mp4";
         let path = env::temp_dir().join(file_path);
         let mut file = File::create(path).expect("Unable to create temporary test mp4 file");
         // 0x00, 0x00, 0x00, 0x20, 0x66, 0x74, 0x79, 0x70, 0x4d, 0x34, 0x56, 0x20,
@@ -293,7 +293,7 @@ mod tests {
     #[test]
     fn unit_args() {
         let filename = String::from("tests/files/test-bokeh-au-0t-vd-30f-854x480.mp4");
-        let args: Vec<String> = vec![String::from("mpi"), filename.clone()];
+        let args: Vec<String> = vec![String::from("mpn"), filename.clone()];
         assert_eq!(args.len(), 2);
     }
 

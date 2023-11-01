@@ -1,5 +1,4 @@
 extern crate clap;
-mod lib;
 use clap::{App, Arg};
 use std::process;
 
@@ -18,7 +17,7 @@ fn main() {
         )
         .get_matches();
 
-    match lib::run(matches) {
+    match mpn::run(matches) {
         Ok(_) => {
             process::exit(0);
         }

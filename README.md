@@ -1,16 +1,14 @@
-# mpi
-[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fsitkevij%2Fmpi.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fsitkevij%2Fmpi?ref=badge_shield)
+# mpn
 
+mpn is a rust-based application which can inspect MPEG-4 media files, read box information, and output TOML format.
 
-mpi is a rust-based application which can inspect MPEG-4 media files, read box information, and output TOML format.
-
-```
-mpi 0.1.0
+```sh
+mpn 0.1.0
 author https://github.com/sitkevij
 MPEG-4 media file inspector.
 
 USAGE:
-    mpi <MEDIAFILE>
+    mpn <MEDIAFILE>
 
 FLAGS:
     -h, --help       Prints help information
@@ -22,21 +20,23 @@ ARGS:
 
 # build & run
 
-This mini-guide expects rust and cargo already [installed](https://www.rust-lang.org/en-US/install.html)!
+This mini-guide expects rust and cargo already installed.
 
 Build tested on macOS and ubuntu.
 
-### one-shot clone, test, build, run:
-```
-$ git clone https://github.com/sitkevij/mpi && \
-cd mpi && \
+## one-shot clone, test, build, run
+
+```sh
+$ git clone https://github.com/sitkevij/mpn && \
+cd mpn && \
 cargo test && \
 cargo build --release && \
-target/release/mpi tests/files/test-bokeh-au-2t-vd-30f-854x480.mp4
+target/release/mpn tests/files/test-bokeh-au-2t-vd-30f-854x480.mp4
 ```
 
-### output:
-```
+## output
+
+```sh
 [media]
 uri = "tests/files/test-bokeh-au-2t-vd-30f-854x480.mp4"
 creation_time = "2018-03-14 15:24:40 UTC"
@@ -79,6 +79,6 @@ height = 29491200
 codec_name = "AVC"
 ```
 
-
 ## License
-[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fsitkevij%2Fmpi.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fsitkevij%2Fmpi?ref=badge_large)
+
+MIT
