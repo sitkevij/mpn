@@ -2,20 +2,22 @@
 name = "mpn"
 version = "0.2.0"
 authors = ["author https://github.com/sitkevij"]
-description = "Rust-based MPEG-4 inspector with TOML output."
+description = "Rust-based MPEG-4 inspector with variable output."
 repository = "https://github.com/sitkevij/mpn"
+categories = ["command-line-utilities", "multimedia", "multimedia::video"]
 license = "MIT"
 readme = "README.md"
-edition = "2018"
+edition = "2021"
+exclude = ["tests/", "Makefile", ".*"]
 
 # The development profile, used for `cargo build`.
 [profile.dev]
-opt-level = 0      # controls the `--opt-level` the compnler builds with.
-                   # 0-1 is good for debugging. 2 is well-optimized. Max is 3.
-codegen-units = 16  # if > 1 enables parallel code generation which improves
-                   # compnle times, but prevents some optimizations.
-                   # Passes `-C codegen-units`. Ignored when `lto = true`.
-panic = 'unwind'   # panic strategy (`-C panic=...`), can also be 'abort'
+opt-level = 0 # controls the `--opt-level` the compnler builds with.
+# 0-1 is good for debugging. 2 is well-optimized. Max is 3.
+codegen-units = 16 # if > 1 enables parallel code generation which improves
+# compnle times, but prevents some optimizations.
+# Passes `-C codegen-units`. Ignored when `lto = true`.
+panic = 'unwind' # panic strategy (`-C panic=...`), can also be 'abort'
 
 [profile.release]
 opt-level = 2
@@ -32,4 +34,4 @@ assert_cli = "0.5"
 tempfile = "3"
 reqwest = { version = "0.11", features = ["blocking", "json"] }
 tokio = { version = "1", features = ["full"] }
-# reqwest-file = "0.2.1"
+url = { version = "2" }

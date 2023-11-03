@@ -1,6 +1,6 @@
 # NAME
 
-**mpn** - Rust-based MPEG-4 inspector with TOML output.
+**mpn** - Rust-based MPEG-4 inspector with variable output.
 
 # SYNOPSIS
 
@@ -15,7 +15,7 @@ mpn [-hV]
 ```txt
 mpn 0.2.0
 author: sitkevij
-Rust-based MPEG-4 inspector with TOML output.
+Rust-based MPEG-4 inspector with variable output.
 
 USAGE:
     mpn <MEDIAFILE>

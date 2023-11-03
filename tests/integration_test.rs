@@ -7,10 +7,7 @@ mod common;
 
 use std::env;
 use std::ffi::OsStr;
-use std::fs::File;
-// use std::path::Path;
 use std::path::PathBuf;
-// use std::io::prelude::*;
 
 fn get_project_dir() -> PathBuf {
     let bin = env::current_exe().expect("bin path");
@@ -34,76 +31,71 @@ fn get_full_path_as_string(path: String) -> String {
     full_path.into_os_string().into_string().unwrap()
 }
 
-// fn get_test_file() -> std::ffi::OsString {
-//     let file_path = "au-0t-vd-30f.mp4";
-//     let path = env::temp_dir().join(file_path);
-//     // if Path::new(&path).exists() == false {
-//     let mut file = File::create(path).expect("Unable to create temporary test mp4 file");
-//     let mut res = reqwest::get("https://raw.githubusercontent.com/sitkevij/mpn/master/tests/files/test-bokeh-au-0t-vd-30f-854x480.mp4").expect("request failed");
-
-//     println!("Status: {}", res.status());
-//     println!("Headers:");
-//     for (key, value) in &*res.headers() {
-//             println!("{} / {}", key, value.to_str().unwrap());
-//         }
-
-//     assert_eq!(res.status(), reqwest::StatusCode::OK);
-
-//     // let _ = std::io::copy(&mut res, &mut std::io::stdout()).expect("copy stream failed");
-//     let _ = std::io::copy(&mut res, &mut file).expect("copy stream failed");
-//     // }
-//     env::temp_dir().join(file_path).into_os_string()
-// }
-
 ///
 /// begin tests
 ///
+
 #[test]
-// fn integ_cli_valid_file() {
-//     assert_cli::Assert::main_binary().with_args(&[get_test_file().to_str().unwrap()]);
-// }
+fn integ_cli_valid_file() {
+    assert_cli::Assert::main_binary().with_args(&[common::get_temp_file_blocking(
+        "https://raw.githubusercontent.com/sitkevij/mpn/master/tests/files/test-bokeh-au-0t-vd-30f-854x480.mp4".to_string(),
+  "au-0t-vd-30f.mp4".to_string())
+        .unwrap().to_str().unwrap()
+        ]);
+}
 
-// #[test]
-// fn integ_cli_valid_stdout_dimensions() {
-//     assert_cli::Assert::main_binary()
-//         // .with_args(&["tests/files/test-bokeh-au-0t-vd-30f-854x480.mp4"])
-//         .with_args(&[get_test_file().to_str().unwrap()])
-//         .and()
-//         .stdout()
-//         .contains("width = 854")
-//         .unwrap();
-// }
+#[test]
+// common::get_file_name(common::get_uri_string_to_url(common::TEST_BOKEH_AU_2T_VD_30F_854X48q0_MP4_URI))
+fn integ_cli_valid_stdout_dimensions() {
+    common::setup();
+    println!(
+        "{:?}",
+        common::get_uri_file_name(common::TEST_BOKEH_AU_2T_VD_30F_854X480_MP4_URI)
+    );
+    assert_cli::Assert::main_binary()
+        .with_args(&[&common::get_temp_file_path(common::get_uri_file_name(
+            common::TEST_BOKEH_AU_2T_VD_30F_854X480_MP4_URI,
+        ))])
+        .and()
+        .stdout()
+        .contains("width = 854")
+        .unwrap();
+}
 
-// #[test]
-// fn integ_cli_valid_stdout_codec() {
-//     assert_cli::Assert::main_binary()
-//         .with_args(&[get_test_file().to_str().unwrap()])
-//         .and()
-//         .stdout()
-//         .contains("codec_name = \"AVC\"")
-//         .unwrap();
-// }
+#[test]
+fn integ_cli_valid_stdout_codec() {
+    common::setup();
+    assert_cli::Assert::main_binary()
+        .with_args(&["tests/files/test-bokeh-au-0t-vd-30f-854x480.mp4"])
+        // .with_args(&[get_test_file().to_str().unwrap()])
+        .and()
+        .stdout()
+        .contains("codec_name = \"AVC\"")
+        .unwrap();
+}
 
-// #[test]
-// fn integ_cli_valid_stdout_track() {
-//     assert_cli::Assert::main_binary()
-//         .with_args(&[get_test_file().to_str().unwrap()])
-//         .and()
-//         .stdout()
-//         .contains("[media.track.video]")
-//         .unwrap();
-// }
+#[test]
+fn integ_cli_valid_stdout_track() {
+    assert_cli::Assert::main_binary()
+        .with_args(&["tests/files/test-bokeh-au-2t-vd-30f-854x480.mp4"])
+        // .with_args(&[get_test_file().to_str().unwrap()])
+        .and()
+        .stdout()
+        .contains("[media.track.video]")
+        .unwrap();
+}
 
-// #[test]
-// fn integ_cli_valid_stdout_no_audio() {
-//     assert_cli::Assert::main_binary()
-//         .with_args(&[get_test_file().to_str().unwrap()])
-//         .and()
-//         .stdout()
-//         .not()
-//         .contains("[media.track.audio]")
-//         .unwrap();
-// }
+#[test]
+fn integ_cli_valid_stdout_no_audio() {
+    assert_cli::Assert::main_binary()
+        .with_args(&["tests/files/test-bokeh-au-0t-vd-30f-854x480.mp4"])
+        // .with_args(&[get_test_file().to_str().unwrap()])
+        .and()
+        .stdout()
+        .not()
+        .contains("[media.track.audio]")
+        .unwrap();
+}
 
 // #[test]
 // fn filename() {
@@ -129,36 +121,48 @@ fn get_full_path_as_string(path: String) -> String {
 // }
 
 /// if need by, run with: cargo test -- --nocapture
-// #[test]
-// fn media_created() {
-//     common::setup();
-//     let file_path = get_test_file().into_string().unwrap();
-//     let config = mpn::Media::new(file_path.clone()).unwrap();
-//     println!("creation_time = {}", config.creation_time);
-//     assert!(config.creation_time > 0);
-// }
+#[test]
+fn integ_cli_valid_media_creation_time() {
+    common::setup();
+    let file_path: String = "tests/files/test-bokeh-au-0t-vd-30f-854x480.mp4".to_string();
+    let config = mpn::Media::new(file_path.clone()).unwrap();
+    println!("creation_time = {}", config.creation_time);
+    assert!(config.creation_time > 0);
+}
 
-// #[test]
-// #[should_panic]
-// fn invalid_mp4() {
-//     common::setup();
-//     // common::TESTS_FILES_TEST_BOKEH_AU_2T_VD_30F_854X480_MP4;
-//     let args: Vec<String> = vec![String::from("mpn"), String::from("src/main.rs")];
-//     assert_eq!(args.len(), 2);
-
-//     let filename = String::from("src/main.rs");
-//     let file_path = get_full_path_as_string(filename);
-//     let config = mpn::Media::new(file_path.clone()).unwrap();
-//     assert_eq!(
-//         config.filename,
-//         file_path
-//     );
-// }
+#[test]
+fn integ_cli_missing_params() {
+    assert_cli::Assert::main_binary()
+        .fails()
+        .and()
+        .stderr()
+        .contains("The following required arguments were not provided")
+        .unwrap();
+}
 
 #[test]
 #[should_panic]
-fn nonexistant_file() {
-    common::setup();
+fn integ_cli_invalid_mp4() {
+    let args: Vec<String> = vec![String::from("mpn"), String::from("src/main.rs")];
+    assert_eq!(args.len(), 2);
+
+    let filename = String::from("src/main.rs");
+    let file_path = get_full_path_as_string(filename);
+    let config = mpn::Media::new(file_path.clone()).unwrap();
+    assert_eq!(config.filename, file_path);
+
+    assert_cli::Assert::main_binary()
+        .with_args(&[&file_path])
+        .and()
+        .stdout()
+        .not()
+        .contains("[media.track.audio]")
+        .unwrap();
+}
+
+#[test]
+#[should_panic]
+fn integ_cli_nonexistant_file() {
     let args: Vec<String> = vec![
         String::from("mpn"),
         String::from("this_file_does_not.exist"),
@@ -176,8 +180,7 @@ fn nonexistant_file() {
 /// thread 'main' panicked at 'read_mp4 failed: InvalidData("unread box content or bad parser sync")', src/libcore/result.rs:906:4
 #[test]
 #[should_panic]
-fn nonexistant_file_2() {
-    common::setup();
+fn integ_cli_nonexistant_file_2() {
     let args: Vec<String> = vec![
         String::from("mpn"),
         String::from("this_file_does_not.exist"),

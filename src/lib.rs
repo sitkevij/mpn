@@ -83,15 +83,21 @@ pub fn run(matches: ArgMatches) -> Result<(), Box<dyn Error>> {
         println!("bytes = {}", size);
         println!(
             "creation_time = \"{}\"",
-            chrono::Utc.timestamp(media.creation_time, 0)
+            chrono::Utc
+                .timestamp_opt(media.creation_time, 0)
+                .unwrap()
         );
         println!(
             "last_modified_time = \"{}\"",
-            chrono::Utc.timestamp(media.last_modified_time, 0)
+            chrono::Utc
+                .timestamp_opt(media.last_modified_time, 0)
+                .unwrap()
         );
         println!(
             "last_accessed_time = \"{}\"",
-            chrono::Utc.timestamp(media.last_accessed_time, 0)
+            chrono::Utc
+                .timestamp_opt(media.last_accessed_time, 0)
+                .unwrap()
         );
         let mut c = Cursor::new(buf);
         let mut context = mp4parse::MediaContext::new();
@@ -218,17 +224,10 @@ mod tests {
     extern crate assert_cli;
     extern crate tempfile;
 
-    /// cargo test -- --nocapture
-    // use super::*;
     use std::env;
     use std::fs::File;
     use std::io::prelude::*;
-    // use self::tempfile::tempdir;
-    // use std::path::Path;
-    // use std::ffi::OsStr;
 
-    /// travis: git clone --depth=50 --branch=master https://github.com/sitkevij/mpn.git sitkevij/mpn
-    // Write
     #[test]
     fn unit_cli_pre_write_temp() {
         let mut file: File = tempfile::tempfile().unwrap();
@@ -248,19 +247,19 @@ mod tests {
         drop(file);
     }
 
-    #[test]
-    fn unit_cli_pre_write_temp_mp4() {
-        let file_path = "mpn-unit-test.mp4";
-        let path = env::temp_dir().join(file_path);
-        let mut file = File::create(path).expect("Unable to create temporary test mp4 file");
-        //0x00, 0x00, 0x00, 0x20, 0x66, 0x74, 0x79, 0x70, 0x4d, 0x34, 0x56, 0x20,
-        let bokeh_au_2t_vd_30f_854x480_mp4: [u8; 12] = [
-            0x00, 0x00, 0x00, 0x20, 0x66, 0x74, 0x79, 0x70, 0x4d, 0x34, 0x56, 0x20,
-        ];
-        file.write_all(&bokeh_au_2t_vd_30f_854x480_mp4)
-            .expect("unable to write test file");
-        drop(file);
-    }
+    // #[test]
+    // fn unit_cli_pre_write_temp_mp4() {
+    //     let file_path = "mpn-unit-test.mp4";
+    //     let path = env::temp_dir().join(file_path);
+    //     let mut file = File::create(path).expect("Unable to create temporary test mp4 file");
+    //     //0x00, 0x00, 0x00, 0x20, 0x66, 0x74, 0x79, 0x70, 0x4d, 0x34, 0x56, 0x20,
+    //     let bokeh_au_2t_vd_30f_854x480_mp4: [u8; 12] = [
+    //         0x00, 0x00, 0x00, 0x20, 0x66, 0x74, 0x79, 0x70, 0x4d, 0x34, 0x56, 0x20,
+    //     ];
+    //     file.write_all(&bokeh_au_2t_vd_30f_854x480_mp4)
+    //         .expect("unable to write test file");
+    //     drop(file);
+    // }
 
     #[test]
     #[should_panic]
@@ -284,12 +283,6 @@ mod tests {
         drop(file);
     }
 
-    // #[test]
-    // fn unit_write_temp_dir_and_file() {
-    //     let dir = tempdir();
-    //     let file_path = dir.path().join("temp.txt").expect("Unable to open");
-    // }
-
     #[test]
     fn unit_args() {
         let filename = String::from("tests/files/test-bokeh-au-0t-vd-30f-854x480.mp4");
@@ -297,23 +290,13 @@ mod tests {
         assert_eq!(args.len(), 2);
     }
 
-    #[test]
-    fn unit_cli_missing_params() {
-        assert_cli::Assert::main_binary()
-            .fails()
-            .and()
-            .stderr()
-            .contains("The following required arguments were not provided")
-            .unwrap();
-    }
-
-    #[test]
-    fn unit_cli_wrong_file() {
-        assert_cli::Assert::main_binary()
-            .with_args(&["tests/files/no_file.found"])
-            .fails()
-            .unwrap();
-    }
+    // #[test]
+    // fn unit_cli_wrong_file() {
+    //     assert_cli::Assert::main_binary()
+    //         .with_args(&["tests/files/no_file.found"])
+    //         .fails()
+    //         .unwrap();
+    // }
 
     // [media]
     // uri = "tests/files/test-bokeh-au-0t-vd-30f-854x480.mp4"

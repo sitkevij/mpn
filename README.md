@@ -1,6 +1,7 @@
 # mpn
 
-mpn is a rust-based application which can inspect MPEG-4 media files, read box information, and output TOML format.
+`mpn` is a rust-based command line application which can inspect MPEG-4 media files, read box information, and output in
+ variable text formats.
 
 ```sh
 mpn 0.1.0

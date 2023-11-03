@@ -678,6 +678,7 @@ dependencies = [
  "reqwest",
  "tempfile",
  "tokio",
+ "url",
 ]
 
 [[package]]
