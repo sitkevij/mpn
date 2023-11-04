@@ -1,10 +1,10 @@
 # mpn
 
-`mpn` is a rust-based command line application which can inspect MPEG-4 media files, read box information, and output in
- variable text formats.
+[mpn](https://github.com/sitkevij/mpn) is a rust-based command line application which can inspect MPEG-4 media files,
+read box information, and output in variable text formats.
 
 ```sh
-mpn 0.1.0
+mpn 0.2.0
 author https://github.com/sitkevij
 MPEG-4 media file inspector.
 
@@ -19,13 +19,13 @@ ARGS:
     <MEDIAFILE>    Pass a valid mp4 file path as an argument for inspection
 ```
 
+[![ci](https://github.com/sitkevij/mpn/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/sitkevij/mpn/actions/workflows/ci.yml)
+
 # build & run
 
 This mini-guide expects rust and cargo already installed.
 
-Build tested on macOS and ubuntu.
-
-## one-shot clone, test, build, run
+## clone, test, build, run
 
 ```sh
 $ git clone https://github.com/sitkevij/mpn && \

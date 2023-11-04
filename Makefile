@@ -105,7 +105,7 @@ manpage:
 	cp mpn.1 /usr/local/share/man/man1
 	man mpn
 
-lint: lint-clippy lint-format lint-markdown
+lint: lint-clippy lint-format lint-markdown lint-spell
 
 lint-clippy:
 	cargo clippy --workspace --all-targets --verbose
@@ -117,6 +117,9 @@ lint-format:
 
 lint-markdown:
 	markdownlint-cli2 --config .markdownlint.json *.md
+
+lint-spell:
+	codespell -L crate -w src/*.rs *.md tests/*.rs *.toml
 
 clean: ## Remove all artifacts
 	rm -rf $(DEBUG_DIR)

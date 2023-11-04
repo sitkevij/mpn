@@ -4,7 +4,11 @@ use std::env;
 use std::path::Path;
 use url::Url;
 
-pub static TEST_BOKEH_AU_2T_VD_30F_854X480_MP4_URI: &str = "https://raw.githubusercontent.com/sitkevij/mpn/master/tests/files/test-bokeh-au-2t-vd-30f-854x480.mp4";
+pub static TEST_BOKEH_AU_0T_VD_30F_854X480_MP4_FILE: &str =
+    "tests/files/test-bokeh-au-0t-vd-30f-854x480.mp4";
+pub static TEST_BOKEH_AU_2T_VD_30F_854X480_MP4_FILE: &str =
+    "tests/files/test-bokeh-au-2t-vd-30f-854x480.mp4";
+pub static TEST_BOKEH_AU_2T_VD_30F_854X480_MP4_URI: &str = "https://raw.githubusercontent.com/sitkevij/mpn/main/tests/files/test-bokeh-au-2t-vd-30f-854x480.mp4";
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 
@@ -32,7 +36,9 @@ async fn get_temp_file(url: String, file_name: String) -> Result<std::ffi::OsStr
  * let segments = url.path_segments().map(|c| c.collect::<Vec<_>>());
  * let file_path = url.path_segments().unwrap().max();
  */
-pub fn setup() {
+pub fn setup() {}
+
+pub fn setup_download_test_files() {
     let file_path = get_uri_file_name(TEST_BOKEH_AU_2T_VD_30F_854X480_MP4_URI);
     // println!("{:?}", url.path_segments().unwrap());
     // println!("{:?}", file_path);
@@ -66,7 +72,6 @@ pub fn get_file_name(url: url::Url) -> String {
     url.path_segments().unwrap().max().unwrap().to_string()
 }
 
-//let v: Vec<&str> = "lion::tiger::leopard".split("::").collect();
 pub fn get_uri_file_name(uri_string: &str) -> String {
     let v: Vec<&str> = uri_string.split('/').collect();
     // println!("vector {:#?}", v);

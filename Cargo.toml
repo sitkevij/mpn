@@ -8,7 +8,7 @@ categories = ["command-line-utilities", "multimedia", "multimedia::video"]
 license = "MIT"
 readme = "README.md"
 edition = "2021"
-exclude = ["tests/", "Makefile", ".*"]
+exclude = ["tests/", "Makefile", ".*", "Dockerfile"]
 
 # The development profile, used for `cargo build`.
 [profile.dev]
@@ -28,10 +28,12 @@ mp4parse = "0.10.0"
 clap = "2.31.1"
 filetime = "0.1"
 chrono = "0.4"
+no_color = "0.1"
 
 [dev-dependencies]
-assert_cli = "0.5"
+assert_cmd = "0.6"
 tempfile = "3"
 reqwest = { version = "0.11", features = ["blocking", "json"] }
 tokio = { version = "1", features = ["full"] }
 url = { version = "2" }
+predicates = "3.0.4"

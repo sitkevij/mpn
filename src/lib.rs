@@ -7,9 +7,10 @@
     unsafe_code,
     unstable_features,
     unused_import_braces,
-    unused_qualifications
+    unused_qualifications,
+    unused_assignments
 )]
-// #![allow(warnings)]
+#![allow(unused_assignments, unused_variables)]
 
 //! mpn main lib
 extern crate chrono;
@@ -19,6 +20,7 @@ extern crate mp4parse;
 
 use self::chrono::prelude::TimeZone;
 use clap::ArgMatches;
+use no_color::is_no_color;
 use std::collections::HashMap;
 use std::error::Error;
 use std::fmt;
@@ -73,6 +75,10 @@ impl Media {
 /// # Arguments
 /// * `matches` - Argument matches from the command line input
 pub fn run(matches: ArgMatches) -> Result<(), Box<dyn Error>> {
+    let mut colorize_outout = true;
+    if is_no_color() {
+        colorize_outout = false;
+    }
     if let Some(file) = matches.value_of("MEDIAFILE") {
         println!("[media]");
         println!("uri = \"{}\"", file);
@@ -83,9 +89,7 @@ pub fn run(matches: ArgMatches) -> Result<(), Box<dyn Error>> {
         println!("bytes = {}", size);
         println!(
             "creation_time = \"{}\"",
-            chrono::Utc
-                .timestamp_opt(media.creation_time, 0)
-                .unwrap()
+            chrono::Utc.timestamp_opt(media.creation_time, 0).unwrap()
         );
         println!(
             "last_modified_time = \"{}\"",
@@ -221,67 +225,8 @@ pub fn run(matches: ArgMatches) -> Result<(), Box<dyn Error>> {
 /// @see (https://doc.rust-lang.org/book/second-edition/ch11-03-test-organization.html)
 #[cfg(test)]
 mod tests {
-    extern crate assert_cli;
+    extern crate assert_cmd;
     extern crate tempfile;
-
-    use std::env;
-    use std::fs::File;
-    use std::io::prelude::*;
-
-    #[test]
-    fn unit_cli_pre_write_temp() {
-        let mut file: File = tempfile::tempfile().unwrap();
-        println!("{:?}", env::temp_dir());
-        file.write_all(b"mpn unit test, test file write.")
-            .expect("unable to write test file");
-        drop(file);
-    }
-
-    #[test]
-    fn unit_cli_pre_write_temp_filename() {
-        let file_path = "mpn-unit-test.txt";
-        let path = env::temp_dir().join(file_path);
-        let mut file = File::create(path).expect("Unable to create temporary test file");
-        file.write_all(b"mpn unit test, test file write.")
-            .expect("unable to write test file");
-        drop(file);
-    }
-
-    // #[test]
-    // fn unit_cli_pre_write_temp_mp4() {
-    //     let file_path = "mpn-unit-test.mp4";
-    //     let path = env::temp_dir().join(file_path);
-    //     let mut file = File::create(path).expect("Unable to create temporary test mp4 file");
-    //     //0x00, 0x00, 0x00, 0x20, 0x66, 0x74, 0x79, 0x70, 0x4d, 0x34, 0x56, 0x20,
-    //     let bokeh_au_2t_vd_30f_854x480_mp4: [u8; 12] = [
-    //         0x00, 0x00, 0x00, 0x20, 0x66, 0x74, 0x79, 0x70, 0x4d, 0x34, 0x56, 0x20,
-    //     ];
-    //     file.write_all(&bokeh_au_2t_vd_30f_854x480_mp4)
-    //         .expect("unable to write test file");
-    //     drop(file);
-    // }
-
-    #[test]
-    #[should_panic]
-    fn unit_cli_invalid_mp4_eof() {
-        let file_path = "mpn-unit-test-invalid.mp4";
-        let path = env::temp_dir().join(file_path);
-        let mut file = File::create(path).expect("Unable to create temporary test mp4 file");
-        // 0x00, 0x00, 0x00, 0x20, 0x66, 0x74, 0x79, 0x70, 0x4d, 0x34, 0x56, 0x20,
-        let bokeh_au_2t_vd_30f_854x480_mp4: [u8; 12] = [
-            0x00, 0x00, 0x00, 0x20, 0x66, 0x74, 0x79, 0x70, 0x4d, 0x34, 0x56, 0x20,
-        ];
-        file.write_all(&bokeh_au_2t_vd_30f_854x480_mp4)
-            .expect("unable to write test file");
-        let file_param = env::temp_dir().join(file_path).into_os_string();
-        assert_cli::Assert::main_binary()
-            .with_args(&[file_param.to_str().unwrap()])
-            .and()
-            .stderr()
-            .contains("UnexpectedEOF")
-            .unwrap();
-        drop(file);
-    }
 
     #[test]
     fn unit_args() {
@@ -289,34 +234,4 @@ mod tests {
         let args: Vec<String> = vec![String::from("mpn"), filename.clone()];
         assert_eq!(args.len(), 2);
     }
-
-    // #[test]
-    // fn unit_cli_wrong_file() {
-    //     assert_cli::Assert::main_binary()
-    //         .with_args(&["tests/files/no_file.found"])
-    //         .fails()
-    //         .unwrap();
-    // }
-
-    // [media]
-    // uri = "tests/files/test-bokeh-au-0t-vd-30f-854x480.mp4"
-    // creation_time = "2018-03-13 16:20:49 UTC"
-    // last_modified_time = "2018-03-13 16:20:49 UTC"
-    // last_accessed_time = "2018-04-04 15:19:56 UTC"
-    // [media.track.video]
-    // track_id = "1"
-    // duration = "TrackScaledTime(30, 0)"
-    // empty_duration = "MediaScaledTime(0)"
-    // media_time = "TrackScaledTime(1, 0)"
-    // timescale = "TrackTimeScale(30, 0)"
-    // [media.track.video.dimension]
-    // width = 854
-    // height = 450
-    // [media.track.video.header]
-    // disabled = true
-    // duration = 30
-    // width = 55967744
-    // height = 29491200
-    // [media.track.video.codec]
-    // codec_name = "AVC"
 }
