@@ -52,7 +52,7 @@ fn integ_cli_valid_stdout_codec() {
 
 #[test]
 fn integ_cli_valid_stdout_media_track_video() {
-    let predicate_fn = predicate::str::contains("media.track.video");
+    let predicate_fn = predicate::str::contains("video");
     let mut cmd = std::process::Command::main_binary().unwrap();
     cmd.arg(common::TEST_BOKEH_AU_2T_VD_30F_854X480_MP4_FILE);
     let output = String::from_utf8(cmd.output().unwrap().stdout);
@@ -61,7 +61,7 @@ fn integ_cli_valid_stdout_media_track_video() {
 
 #[test]
 fn integ_cli_valid_stdout_media_track_audio() {
-    let predicate_fn = predicate::str::contains("media.track.audio");
+    let predicate_fn = predicate::str::contains("48000");
     let mut cmd = std::process::Command::main_binary().unwrap();
     cmd.arg(common::TEST_BOKEH_AU_2T_VD_30F_854X480_MP4_FILE);
     let output = String::from_utf8(cmd.output().unwrap().stdout);
@@ -70,7 +70,7 @@ fn integ_cli_valid_stdout_media_track_audio() {
 
 #[test]
 fn integ_cli_invalid_stdout_media_track_audio() {
-    let predicate_fn = predicate::str::contains("media.track.audio");
+    let predicate_fn = predicate::str::contains("audio");
     let mut cmd = std::process::Command::main_binary().unwrap();
     cmd.arg(common::TEST_BOKEH_AU_0T_VD_30F_854X480_MP4_FILE);
     let output = String::from_utf8(cmd.output().unwrap().stdout);

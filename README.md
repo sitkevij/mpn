@@ -19,7 +19,10 @@ ARGS:
     <MEDIAFILE>    Pass a valid mp4 file path as an argument for inspection
 ```
 
-[![ci](https://github.com/sitkevij/mpn/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/sitkevij/mpn/actions/workflows/ci.yml)
+| branch  | ci status |
+|---------|-----------|
+| main    | [![ci](https://github.com/sitkevij/mpn/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/sitkevij/mpn/actions/workflows/ci.yml)|
+| develop | [![ci](https://github.com/sitkevij/mpn/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/sitkevij/mpn/actions/workflows/ci.yml)|
 
 # build & run
 
@@ -37,7 +40,7 @@ target/release/mpn tests/files/test-bokeh-au-2t-vd-30f-854x480.mp4
 
 ## output
 
-```sh
+```toml
 [media]
 uri = "tests/files/test-bokeh-au-2t-vd-30f-854x480.mp4"
 creation_time = "2018-03-14 15:24:40 UTC"
