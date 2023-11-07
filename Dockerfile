@@ -12,6 +12,5 @@ RUN apt update && apt upgrade -y
 RUN apt install curl rustc cargo libssl-dev openssl pkg-config vim -y
 ENV source $HOME/.cargo/env && PATH=/root/.cargo/bin:$PATH
 COPY . .
-RUN ls -lt
 # @see https://rust-lang.github.io/rfcs/2789-sparse-index.html
 RUN cargo -Z sparse-registry install --path .

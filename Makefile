@@ -26,7 +26,10 @@ debug:
 release: test
 	cargo build --release
 
-test:
+test: # see https://doc.rust-lang.org/book/ch11-02-running-tests.html
+	cargo test -- --test-threads=1
+
+test-all:
 	cargo test --verbose --all -- --nocapture
 
 example:

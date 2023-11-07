@@ -25,7 +25,7 @@ codegen-units = 1
 
 [dependencies]
 mp4parse = "0.10.0"
-clap = "2.31.1"
+clap = "3"
 filetime = "0.1"
 chrono = "0.4"
 no_color = "0.1"
@@ -36,4 +36,4 @@ tempfile = "3"
 reqwest = { version = "0.11", features = ["blocking", "json"] }
 tokio = { version = "1", features = ["full"] }
 url = { version = "2" }
-predicates = "2.1.5"
+predicates = "3"

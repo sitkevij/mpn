@@ -39,7 +39,7 @@ jobs:
           rust-version: ${{ matrix.rust }}      
       - run: cargo build --verbose --all
       - run: cargo build --release
-      - run: cargo test
+      - run: cargo test -- --test-threads=1
       - run: cargo install hyperfine
       - run: target/release/mpn tests/files/test-bokeh-au-2t-vd-30f-854x480.mp4
       - run: hyperfine -i --warmup 20 "target/release/mpn tests/files/test-bokeh-au-2t-vd-30f-854x480.mp4"

@@ -64,8 +64,8 @@ fn integ_cli_valid_stdout_media_track_audio() {
     let predicate_fn = predicate::str::contains("48000");
     let mut cmd = std::process::Command::main_binary().unwrap();
     cmd.arg(common::TEST_BOKEH_AU_2T_VD_30F_854X480_MP4_FILE);
-    let output = String::from_utf8(cmd.output().unwrap().stdout);
-    assert!(predicate_fn.eval(&output.unwrap()));
+    let result = String::from_utf8_lossy(&cmd.output().unwrap().stdout).to_string();
+    assert!(predicate_fn.eval(&result));
 }
 
 #[test]
