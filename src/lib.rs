@@ -30,6 +30,9 @@ use std::fs;
 use std::fs::File;
 use std::io::{Cursor, Read};
 
+/// MEDIAFILE Argument constant
+pub const ARG_MEDIAFILE: &str = "MEDIAFILE";
+
 /// Media struct which holds file metadata
 pub struct Media {
     /// filename
@@ -79,7 +82,7 @@ pub fn run(matches: ArgMatches) -> Result<(), Box<dyn Error>> {
     if is_no_color() {
         colorize_outout = false;
     }
-    if let Some(file) = matches.value_of("MEDIAFILE") {
+    if let Some(file) = matches.get_one::<String>(ARG_MEDIAFILE).map(|s| s.as_str()) {
         println!("[media]");
         println!("uri = \"{}\"", file);
         let mut fd = File::open(file)?;

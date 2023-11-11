@@ -5,7 +5,7 @@ extern crate reqwest;
 
 mod common;
 
-use assert_cmd::prelude::*;
+use assert_cmd::Command;
 use predicates::prelude::*;
 
 ///
@@ -14,7 +14,7 @@ use predicates::prelude::*;
 
 #[test]
 fn integ_cli_valid_file_path() {
-    let mut cmd = std::process::Command::main_binary().unwrap();
+    let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
     cmd.arg(common::TEST_BOKEH_AU_2T_VD_30F_854X480_MP4_FILE);
     cmd.assert();
 }
@@ -22,7 +22,7 @@ fn integ_cli_valid_file_path() {
 #[test]
 #[should_panic]
 fn integ_cli_invalid_mp4_file() {
-    let mut cmd = std::process::Command::main_binary().unwrap();
+    let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
     cmd.arg("src/main.rs");
     cmd.assert()
         .failure()
@@ -35,7 +35,7 @@ fn integ_cli_invalid_mp4_file() {
 #[test]
 fn integ_cli_valid_stdout_dimensions() {
     let predicate_fn = predicate::str::contains("854");
-    let mut cmd = std::process::Command::main_binary().unwrap();
+    let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
     cmd.arg(common::TEST_BOKEH_AU_2T_VD_30F_854X480_MP4_FILE);
     let output = String::from_utf8(cmd.output().unwrap().stdout);
     assert!(predicate_fn.eval(&output.unwrap()));
@@ -44,7 +44,7 @@ fn integ_cli_valid_stdout_dimensions() {
 #[test]
 fn integ_cli_valid_stdout_codec() {
     let predicate_fn = predicate::str::contains("AVC");
-    let mut cmd = std::process::Command::main_binary().unwrap();
+    let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
     cmd.arg(common::TEST_BOKEH_AU_2T_VD_30F_854X480_MP4_FILE);
     let output = String::from_utf8(cmd.output().unwrap().stdout);
     assert!(predicate_fn.eval(&output.unwrap()));
@@ -53,7 +53,7 @@ fn integ_cli_valid_stdout_codec() {
 #[test]
 fn integ_cli_valid_stdout_media_track_video() {
     let predicate_fn = predicate::str::contains("video");
-    let mut cmd = std::process::Command::main_binary().unwrap();
+    let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
     cmd.arg(common::TEST_BOKEH_AU_2T_VD_30F_854X480_MP4_FILE);
     let output = String::from_utf8(cmd.output().unwrap().stdout);
     assert!(predicate_fn.eval(&output.unwrap()));
@@ -62,7 +62,7 @@ fn integ_cli_valid_stdout_media_track_video() {
 #[test]
 fn integ_cli_valid_stdout_media_track_audio() {
     let predicate_fn = predicate::str::contains("48000");
-    let mut cmd = std::process::Command::main_binary().unwrap();
+    let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
     cmd.arg(common::TEST_BOKEH_AU_2T_VD_30F_854X480_MP4_FILE);
     let result = String::from_utf8_lossy(&cmd.output().unwrap().stdout).to_string();
     assert!(predicate_fn.eval(&result));
@@ -71,7 +71,7 @@ fn integ_cli_valid_stdout_media_track_audio() {
 #[test]
 fn integ_cli_invalid_stdout_media_track_audio() {
     let predicate_fn = predicate::str::contains("audio");
-    let mut cmd = std::process::Command::main_binary().unwrap();
+    let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
     cmd.arg(common::TEST_BOKEH_AU_0T_VD_30F_854X480_MP4_FILE);
     let output = String::from_utf8(cmd.output().unwrap().stdout);
     assert!(!predicate_fn.eval(&output.unwrap()));
