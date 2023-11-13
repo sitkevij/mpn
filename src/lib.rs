@@ -20,6 +20,11 @@ extern crate mp4parse;
 
 use self::chrono::prelude::TimeZone;
 use clap::ArgMatches;
+use mp4parse::AudioCodecSpecific;
+use mp4parse::SampleEntry;
+use mp4parse::TrackType;
+use mp4parse::VideoCodecSpecific;
+use mp4parse::read_mp4;
 use no_color::is_no_color;
 use std::collections::HashMap;
 use std::error::Error;
@@ -58,7 +63,6 @@ impl Media {
     /// constructor
     pub fn new(filename: String) -> Result<Media, Box<dyn Error>> {
         let preview: [u8; 256] = [0x0; 256];
-        // println!("Media.new filename={}", filename);
         let metadata = fs::metadata(filename.clone()).unwrap();
         let ctime = filetime::FileTime::from_creation_time(&metadata).unwrap();
         let mtime = filetime::FileTime::from_last_modification_time(&metadata);
@@ -88,40 +92,80 @@ pub fn run(matches: ArgMatches) -> Result<(), Box<dyn Error>> {
         let mut fd = File::open(file)?;
         let mut buf = Vec::new();
         let size = fd.read_to_end(&mut buf)?;
-        let media = Media::new(file.to_string()).unwrap();
+        let metadata = fs::metadata(file)?;
         println!("bytes = {}", size);
-        println!(
-            "creation_time = \"{}\"",
-            chrono::Utc.timestamp_opt(media.creation_time, 0).unwrap()
-        );
-        println!(
-            "last_modified_time = \"{}\"",
-            chrono::Utc
-                .timestamp_opt(media.last_modified_time, 0)
-                .unwrap()
-        );
-        println!(
-            "last_accessed_time = \"{}\"",
-            chrono::Utc
-                .timestamp_opt(media.last_accessed_time, 0)
-                .unwrap()
-        );
+        if let Ok(time) = metadata.modified() {
+            println!(
+                "modified = {:?}",
+                chrono::Utc
+                    .timestamp_opt(
+                        time.duration_since(std::time::UNIX_EPOCH)
+                            .unwrap()
+                            .as_secs()
+                            .try_into()
+                            .unwrap(),
+                        0
+                    )
+                    .unwrap()
+            );
+        } else {
+            println!(
+                "modified = {:?}",
+                "\"error: not supported on this platform.\""
+            );
+        }
+        if let Ok(time) = metadata.created() {
+            println!(
+                "created = {:?}",
+                chrono::Utc
+                    .timestamp_opt(
+                        time.duration_since(std::time::UNIX_EPOCH)
+                            .unwrap()
+                            .as_secs()
+                            .try_into()
+                            .unwrap(),
+                        0
+                    )
+                    .unwrap()
+            );
+        } else {
+            println!(
+                "created = {:?}",
+                "\"error: not supported on this platform.\""
+            );
+        }
+        if let Ok(time) = metadata.accessed() {
+            println!(
+                "accessed = {:?}",
+                chrono::Utc
+                    .timestamp_opt(
+                        time.duration_since(std::time::UNIX_EPOCH)
+                            .unwrap()
+                            .as_secs()
+                            .try_into()
+                            .unwrap(),
+                        0
+                    )
+                    .unwrap()
+            );
+        } else {
+            println!(
+                "accessed = {:?}",
+                "\"error: not supported on this platform.\""
+            );
+        }
         let mut c = Cursor::new(buf);
-        let mut context = mp4parse::MediaContext::new();
-        mp4parse::read_mp4(&mut c, &mut context).expect("read_mp4 failed");
+        let context = read_mp4(&mut c).expect("read_mp4 failed");
         for track in context.tracks {
-            match track.data {
-                // Some(mp4parse::SampleEntry::Video(_v)) => {
-                Some(mp4parse::SampleEntry::Video(_v)) => {
+            match track.track_type {
+                // see https://docs.rs/mp4parse/latest/mp4parse/struct.Track.html
+                TrackType::Video => {
                     println!("[media.track.video]");
                     println!("track_id = {:?}", track.track_id.unwrap());
                     println!("duration = {:?}", track.duration.unwrap());
                     println!("empty_duration = \"{:?}\"", track.empty_duration.unwrap());
                     println!("media_time = \"{:?}\"", track.media_time.unwrap()); // 1 = 64 bit creation and modification times. 0 = 64 bit creation and modification times.
                     println!("timescale = \"{:?}\"", track.timescale.unwrap());
-                    println!("[media.track.video.dimension]");
-                    println!("width = {:?}", _v.width);
-                    println!("height = {:?}", _v.height);
 
                     let thb = track.tkhd.unwrap(); // TrackHeaderBox
                     println!("[media.track.video.header]");
@@ -130,19 +174,39 @@ pub fn run(matches: ArgMatches) -> Result<(), Box<dyn Error>> {
                     println!("width = {:?}", thb.width);
                     println!("height = {:?}", thb.height);
 
+                    let stsd = track
+                        .stsd
+                        .expect("TrackType::Video missing SampleDescriptionBox");
+                    let v = match stsd
+                        .descriptions
+                        .first()
+                        .expect("TrackType::Video missing SampleEntry")
+                    {
+                        SampleEntry::Video(v) => v,
+                        _ => panic!("TrackType::Video missing VideoSampleEntry"),
+                    };
+                    println!("[media.track.video.sample.entry]");
+                    println!("width = {:?}", v.width);
+                    println!("height = {:?}", v.height);
+
                     let mut vcsd = HashMap::new(); // VideoCodecSpecific data
-                    let codec = match _v.codec_specific {
-                        mp4parse::VideoCodecSpecific::AVCConfig(_v) => "AVC",
-                        mp4parse::VideoCodecSpecific::VPxConfig(_vpx) => {
-                            vcsd.insert(String::from("vpx.bit_depth"), _vpx.bit_depth);
-                            vcsd.insert(String::from("vpx.color_space"), _vpx.color_space);
+                    let codec = match v.codec_specific {
+                        VideoCodecSpecific::AV1Config(ref _av1c) => "AV1",
+                        VideoCodecSpecific::AVCConfig(ref avc) => {
+                            // vcsd.insert(String::from("avc.bytes_length"), avc.len());
+                            "AVC"
+                        }
+                        VideoCodecSpecific::VPxConfig(ref vpx) => {
+                            vcsd.insert(String::from("vpx.bit_depth"), vpx.bit_depth);
+                            vcsd.insert(String::from("vpx.colour_primaries"), vpx.colour_primaries);
                             vcsd.insert(
                                 String::from("vpx.chroma_subsampling"),
-                                _vpx.chroma_subsampling,
+                                vpx.chroma_subsampling,
                             );
                             "VPx"
                         }
-                        mp4parse::VideoCodecSpecific::ESDSConfig(_mp4v) => "MP4V",
+                        VideoCodecSpecific::ESDSConfig(ref mp4v) => "MP4V",
+                        VideoCodecSpecific::H263Config(ref _h263) => "H263",
                     };
                     println!("[media.track.video.codec]");
                     println!("codec_name = \"{}\"", codec);
@@ -150,17 +214,13 @@ pub fn run(matches: ArgMatches) -> Result<(), Box<dyn Error>> {
                         println!("{} = {:?}", key, value);
                     }
                 }
-                Some(mp4parse::SampleEntry::Audio(a)) => {
+                TrackType::Audio => {
                     println!("[media.track.audio]");
                     println!("track_id = {:?}", track.track_id.unwrap());
                     println!("duration = \"{:?}\"", track.duration.unwrap());
                     println!("empty_duration = \"{:?}\"", track.empty_duration.unwrap());
                     println!("media_time = \"{:?}\"", track.media_time.unwrap());
                     println!("timescale = \"{:?}\"", track.timescale.unwrap());
-                    println!("[media.track.audio.dimension]");
-                    println!("channelcount = {:?}", a.channelcount);
-                    println!("samplesize = {:?}", a.samplesize);
-                    println!("samplerate = {:?}", a.samplerate);
 
                     let thb = track.tkhd.unwrap();
                     println!("[media.track.audio.header]");
@@ -169,12 +229,26 @@ pub fn run(matches: ArgMatches) -> Result<(), Box<dyn Error>> {
                     println!("width = {:?}", thb.width);
                     println!("height = {:?}", thb.height);
 
+                    let stsd = track
+                        .stsd
+                        .expect("TrackType::Audio missing SampleDescriptionBox");
+                    let a = match stsd
+                        .descriptions
+                        .first()
+                        .expect("TrackType::Audio missing SampleEntry")
+                    {
+                        SampleEntry::Audio(a) => a,
+                        _ => panic!("TrackType::Audio missing AudioSampleEntry"),
+                    };
+
+                    println!("[media.track.audio.sample.entry]");
+                    println!("channelcount = {:?}", a.channelcount);
+                    println!("samplesize = {:?}", a.samplesize);
+                    println!("samplerate = {:?}", a.samplerate);
+
                     let mut acsd = HashMap::new(); // AudioCodecSpecific data
-                    let codec = match a.codec_specific {
-                        mp4parse::AudioCodecSpecific::ES_Descriptor(esds) => {
-                            // @see https://docs.rs/enum_derive/*/enum_derive/index.html
-                            // @see https://stackoverflow.com/questions/39146584/how-do-i-create-a-rust-hashmap-where-the-value-can-be-one-of-multiple-types
-                            // @see http://siciarz.net/24-days-of-rust-anymap/
+                    let codec = match &a.codec_specific {
+                        AudioCodecSpecific::ES_Descriptor(esds) => {
                             acsd.insert(
                                 String::from("esds.audio_sample_rate"),
                                 esds.audio_sample_rate.unwrap(),
@@ -185,7 +259,7 @@ pub fn run(matches: ArgMatches) -> Result<(), Box<dyn Error>> {
                             );
                             "ES"
                         }
-                        mp4parse::AudioCodecSpecific::FLACSpecificBox(flac) => {
+                        AudioCodecSpecific::FLACSpecificBox(flac) => {
                             acsd.insert(
                                 String::from("flac.blocks[0].block_type"),
                                 flac.blocks[0].block_type as u32,
@@ -196,16 +270,16 @@ pub fn run(matches: ArgMatches) -> Result<(), Box<dyn Error>> {
                             );
                             "FLAC"
                         }
-                        mp4parse::AudioCodecSpecific::OpusSpecificBox(opus) => {
+                        AudioCodecSpecific::OpusSpecificBox(opus) => {
                             acsd.insert(String::from("opus.version"), opus.version as u32);
                             "Opus"
                         }
-                        mp4parse::AudioCodecSpecific::ALACSpecificBox(alac) => {
+                        AudioCodecSpecific::ALACSpecificBox(alac) => {
                             acsd.insert(String::from("alac.data.len()"), alac.data.len() as u32);
                             "ALAC"
                         }
-                        mp4parse::AudioCodecSpecific::MP3 => "MP3",
-                        mp4parse::AudioCodecSpecific::LPCM => "LPCM",
+                        AudioCodecSpecific::MP3 => "MP3",
+                        AudioCodecSpecific::LPCM => "LPCM",
                     };
 
                     println!("[media.track.audio.codec]");
@@ -214,9 +288,32 @@ pub fn run(matches: ArgMatches) -> Result<(), Box<dyn Error>> {
                         println!("{} = {:?}", key, value);
                     }
                 }
-                Some(mp4parse::SampleEntry::Unknown) | None => {}
+                TrackType::Picture => {
+                    println!("[media.track.picture]");
+                    println!(
+                        "error = {:?}",
+                        "TrackType::Picture found, but not supported by this application."
+                    );
+                }
+                TrackType::AuxiliaryVideo => {
+                    println!("[media.track.auxiliaryvideo]");
+                    println!(
+                        "error = {:?}",
+                        "TrackType::AuxiliaryVideo found, but not supported by this application."
+                    );
+                }
+                TrackType::Metadata => {
+                    println!("[media.track.metadata]");
+                    println!(
+                        "error = {:?}",
+                        "TrackType::Metadata found, but not supported by this application."
+                    );
+                }
+                TrackType::Unknown => {
+                    println!("[media.track.unknown]");
+                    println!("error = {:?}", "TrackType::Unknown.");
+                }
             }
-            //
         }
     }
     println!();

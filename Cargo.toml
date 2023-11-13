@@ -24,7 +24,7 @@ opt-level = 2
 codegen-units = 1
 
 [dependencies]
-mp4parse = "0.10.0"
+mp4parse = "0.17.0"
 clap = "4.4"
 filetime = "0.1"
 chrono = "0.4"
