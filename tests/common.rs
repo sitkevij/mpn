@@ -1,14 +1,86 @@
-pub fn setup() {
-    // -> Result<()> {
-    // let mut res = reqwest::get("https://www.rust-lang.org/en-US/")?;
+#![allow(dead_code)]
 
-    // println!("Status: {}", res.status());
-    // println!("Headers:\n{}", res.headers());
+use std::env;
+use std::path::Path;
+use url::Url;
 
-    // // copy the response body directly to stdout
-    // let _ = std::io::copy(&mut res, &mut std::io::stdout())?;
+pub static TEST_BOKEH_AU_0T_VD_30F_854X480_MP4_FILE: &str =
+    "tests/files/test-bokeh-au-0t-vd-30f-854x480.mp4";
+pub static TEST_BOKEH_AU_2T_VD_30F_854X480_MP4_FILE: &str =
+    "tests/files/test-bokeh-au-2t-vd-30f-854x480.mp4";
+pub static TEST_BOKEH_AU_2T_VD_30F_854X480_MP4_URI: &str = "https://raw.githubusercontent.com/sitkevij/mpn/main/tests/files/test-bokeh-au-2t-vd-30f-854x480.mp4";
 
-    // Ok(())
+type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
+
+pub fn get_temp_file_blocking(url: String, file_name: String) -> Result<std::ffi::OsString> {
+    let res = reqwest::blocking::get(url)?;
+    let file_path = env::temp_dir().join(file_name);
+    let mut file = std::fs::File::create(&file_path)?;
+    let mut content = std::io::Cursor::new(res.bytes().unwrap());
+    std::io::copy(&mut content, &mut file)?;
+    Ok(env::temp_dir().join(&file_path).into_os_string())
+}
+
+async fn get_temp_file(url: String, file_name: String) -> Result<std::ffi::OsString> {
+    let res = reqwest::get(url).await?;
+    let file_path = env::temp_dir().join(file_name);
+    let mut file = std::fs::File::create(&file_path)?;
+    let mut content = std::io::Cursor::new(res.bytes().await?);
+    std::io::copy(&mut content, &mut file)?;
+    Ok(env::temp_dir().join(&file_path).into_os_string())
+}
+
+/**
+ * common testing setup
+ *
+ * let segments = url.path_segments().map(|c| c.collect::<Vec<_>>());
+ * let file_path = url.path_segments().unwrap().max();
+ */
+pub fn setup() {}
+
+pub fn setup_download_test_files() {
+    let file_path = get_uri_file_name(TEST_BOKEH_AU_2T_VD_30F_854X480_MP4_URI);
+    // println!("{:?}", url.path_segments().unwrap());
+    // println!("{:?}", file_path);
+    if !Path::new(&file_path).exists() {
+        get_file_from_uri_if_not_exists(TEST_BOKEH_AU_2T_VD_30F_854X480_MP4_URI);
+    }
+}
+
+pub fn get_file_from_uri_if_not_exists(uri_string: &str) {
+    let file_path = get_uri_file_name(uri_string);
+    // println!("{:?}", url.path_segments().unwrap());
+    // println!("{:?}", file_path);
+    if !Path::new(&file_path).exists() {
+        let _ = get_temp_file_blocking(uri_string.to_string(), file_path);
+    }
+}
+
+pub fn get_temp_file_path(file_name: String) -> String {
+    env::temp_dir()
+        .join(file_name)
+        .to_str()
+        .unwrap()
+        .to_string()
+}
+
+pub fn get_uri_string_to_url(uri_string: &str) -> url::Url {
+    Url::parse(uri_string).unwrap()
+}
+
+pub fn get_file_name(url: url::Url) -> String {
+    url.path_segments().unwrap().max().unwrap().to_string()
+}
+
+pub fn get_uri_file_name(uri_string: &str) -> String {
+    let v: Vec<&str> = uri_string.split('/').collect();
+    // println!("vector {:#?}", v);
+    // println!(
+    //     "vector index {:#?}",
+    //     v.get(v.len() - 1).unwrap().to_string()
+    // );
+    // v.get(v.len() - 1).unwrap().to_string()
+    v.last().unwrap().to_string()
 }
 
 // filename: tests_files_test_bokeh_au_2t_vd_30f_854x480_mp4

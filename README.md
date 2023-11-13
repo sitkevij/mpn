@@ -1,16 +1,15 @@
-# mpi
-[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fsitkevij%2Fmpi.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fsitkevij%2Fmpi?ref=badge_shield)
+# mpn
 
+[mpn](https://github.com/sitkevij/mpn) is a rust-based command line application which can inspect MPEG-4 media files,
+read box information, and output in variable text formats.
 
-mpi is a rust-based application which can inspect MPEG-4 media files, read box information, and output TOML format.
-
-```
-mpi 0.1.0
+```sh
+mpn 0.2.0
 author https://github.com/sitkevij
 MPEG-4 media file inspector.
 
 USAGE:
-    mpi <MEDIAFILE>
+    mpn <MEDIAFILE>
 
 FLAGS:
     -h, --help       Prints help information
@@ -20,23 +19,28 @@ ARGS:
     <MEDIAFILE>    Pass a valid mp4 file path as an argument for inspection
 ```
 
+| branch  | ci status |
+|---------|-----------|
+| main    | [![ci](https://github.com/sitkevij/mpn/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/sitkevij/mpn/actions/workflows/ci.yml)|
+| develop | [![ci](https://github.com/sitkevij/mpn/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/sitkevij/mpn/actions/workflows/ci.yml)|
+
 # build & run
 
-This mini-guide expects rust and cargo already [installed](https://www.rust-lang.org/en-US/install.html)!
+This mini-guide expects rust and cargo already installed.
 
-Build tested on macOS and ubuntu.
+## clone, test, build, run
 
-### one-shot clone, test, build, run:
-```
-$ git clone https://github.com/sitkevij/mpi && \
-cd mpi && \
+```sh
+$ git clone https://github.com/sitkevij/mpn && \
+cd mpn && \
 cargo test && \
 cargo build --release && \
-target/release/mpi tests/files/test-bokeh-au-2t-vd-30f-854x480.mp4
+target/release/mpn tests/files/test-bokeh-au-2t-vd-30f-854x480.mp4
 ```
 
-### output:
-```
+## output
+
+```toml
 [media]
 uri = "tests/files/test-bokeh-au-2t-vd-30f-854x480.mp4"
 creation_time = "2018-03-14 15:24:40 UTC"
@@ -79,6 +83,6 @@ height = 29491200
 codec_name = "AVC"
 ```
 
-
 ## License
-[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fsitkevij%2Fmpi.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fsitkevij%2Fmpi?ref=badge_large)
+
+MIT

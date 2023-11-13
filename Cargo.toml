@@ -1,33 +1,39 @@
 [package]
-name = "mpi"
+name = "mpn"
 version = "0.2.0"
 authors = ["author https://github.com/sitkevij"]
-description = "Rust-based MPEG-4 inspector with TOML output."
-repository = "https://github.com/sitkevij/mpi"
+description = "Rust-based MPEG-4 inspector with variable output."
+repository = "https://github.com/sitkevij/mpn"
+categories = ["command-line-utilities", "multimedia", "multimedia::video"]
 license = "MIT"
 readme = "README.md"
-edition = "2018"
+edition = "2021"
+exclude = ["tests/", "Makefile", ".*", "Dockerfile"]
 
 # The development profile, used for `cargo build`.
 [profile.dev]
-opt-level = 0      # controls the `--opt-level` the compiler builds with.
-                   # 0-1 is good for debugging. 2 is well-optimized. Max is 3.
-codegen-units = 16  # if > 1 enables parallel code generation which improves
-                   # compile times, but prevents some optimizations.
-                   # Passes `-C codegen-units`. Ignored when `lto = true`.
-panic = 'unwind'   # panic strategy (`-C panic=...`), can also be 'abort'
+opt-level = 0 # controls the `--opt-level` the compnler builds with.
+# 0-1 is good for debugging. 2 is well-optimized. Max is 3.
+codegen-units = 16 # if > 1 enables parallel code generation which improves
+# compnle times, but prevents some optimizations.
+# Passes `-C codegen-units`. Ignored when `lto = true`.
+panic = 'unwind' # panic strategy (`-C panic=...`), can also be 'abort'
 
 [profile.release]
 opt-level = 2
 codegen-units = 1
 
 [dependencies]
-mp4parse = "0.10.0"
-clap = "2.33.3"
-filetime = "0.2.15"
-chrono = "0.4.19"
+mp4parse = "0.17.0"
+clap = "4.4"
+filetime = "0.1"
+chrono = "0.4"
+no_color = "0.1"
 
 [dev-dependencies]
-assert_cli = "0.6.3"
-tempfile = "3.2.0"
-reqwest = "0.9"
+assert_cmd = "2.0.12"
+tempfile = "3.8"
+reqwest = { version = "0.11", features = ["blocking", "json"] }
+tokio = { version = "1", features = ["full"] }
+url = { version = "2.4" }
+predicates = "3"
