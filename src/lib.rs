@@ -20,11 +20,11 @@ extern crate mp4parse;
 
 use self::chrono::prelude::TimeZone;
 use clap::ArgMatches;
+use mp4parse::read_mp4;
 use mp4parse::AudioCodecSpecific;
 use mp4parse::SampleEntry;
 use mp4parse::TrackType;
 use mp4parse::VideoCodecSpecific;
-use mp4parse::read_mp4;
 use no_color::is_no_color;
 use std::collections::HashMap;
 use std::error::Error;
