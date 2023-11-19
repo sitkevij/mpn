@@ -3,6 +3,17 @@
 [mpn](https://github.com/sitkevij/mpn) is a rust-based command line application which can inspect MPEG-4 media files,
 read box information, and output in variable text formats.
 
+[![Crates.io](https://img.shields.io/crates/v/mpn?style=flat-square)](https://crates.io/crates/mpn)
+[![Crates.io](https://img.shields.io/crates/d/mpn?style=flat-square)](https://crates.io/crates/mpn)
+[![GitHub Repo stars](https://img.shields.io/github/stars/sitkevij/mpn)](https://github.com/sitkevij/mpn)
+[![GitHub repo size](https://img.shields.io/github/repo-size/sitkevij/mpn)](https://github.com/sitkevij/mpn)
+[![main](https://github.com/sitkevij/mpn/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/sitkevij/mpn/actions/workflows/ci.yml?branch=main)
+[![docs.rs](https://img.shields.io/docsrs/mpn)](https://docs.rs/mpn/0.2.0/mpn/)
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue?style=flat-square)](https://github.com/sitkevij/mpn/blob/main/LICENSE-APACHE)
+[![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](https://github.com/sitkevij/mpn/blob/main/LICENSE-MIT)
+
+# Help
+
 ```sh
 mpn 0.2.0
 author https://github.com/sitkevij
@@ -19,28 +30,38 @@ ARGS:
     <MEDIAFILE>    Pass a valid mp4 file path as an argument for inspection
 ```
 
-| branch  | ci status |
-|---------|-----------|
-| main    | [![ci](https://github.com/sitkevij/mpn/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/sitkevij/mpn/actions/workflows/ci.yml)|
-| develop | [![ci](https://github.com/sitkevij/mpn/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/sitkevij/mpn/actions/workflows/ci.yml)|
+## CI Status
 
-# build & run
+| branch  | ci status                                                                                                                                                                |
+| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| main    | [![main](https://github.com/sitkevij/mpn/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/sitkevij/mpn/actions/workflows/ci.yml?branch=main)          |
+| develop | [![develop](https://github.com/sitkevij/mpn/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/sitkevij/mpn/actions/workflows/ci.yml?branch=develop) |
 
-This mini-guide expects rust and cargo already installed.
+## Installation
 
-## clone, test, build, run
+### crates.io
+
+If cargo installed, this the easiest and fasted way to get up and running:
 
 ```sh
-$ git clone https://github.com/sitkevij/mpn && \
+cargo install mpn
+```
+
+### From source
+
+```sh
+git clone https://github.com/sitkevij/mpn && \
 cd mpn && \
 cargo test && \
 cargo build --release && \
 target/release/mpn tests/files/test-bokeh-au-2t-vd-30f-854x480.mp4
 ```
 
-## output
+## Output
 
 ```toml
+$ mpn tests/files/test-bokeh-au-2t-vd-30f-854x480.mp4
+
 [media]
 uri = "tests/files/test-bokeh-au-2t-vd-30f-854x480.mp4"
 creation_time = "2018-03-14 15:24:40 UTC"
@@ -85,4 +106,9 @@ codec_name = "AVC"
 
 ## License
 
-MIT
+MIT OR Apache-2.0
+
+## Contribution
+
+Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in the work by you, as
+defined in the Apache-2.0 license, shall be dual licensed as above, without any additional terms or conditions.
