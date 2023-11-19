@@ -1,6 +1,6 @@
 [package]
 name = "mpn"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["author https://github.com/sitkevij"]
 description = "Rust-based MPEG-4 inspector with variable output."
 repository = "https://github.com/sitkevij/mpn"
