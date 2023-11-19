@@ -5,17 +5,16 @@ authors = ["author https://github.com/sitkevij"]
 description = "Rust-based MPEG-4 inspector with variable output."
 repository = "https://github.com/sitkevij/mpn"
 categories = ["command-line-utilities", "multimedia", "multimedia::video"]
-license = "MIT"
+license = "MIT OR Apache-2.0"
 readme = "README.md"
 edition = "2021"
-exclude = ["tests/", "Makefile", ".*", "Dockerfile"]
-
+include = ["src/**/*", "Cargo.toml", "Cargo.lock", "README.md"]
 # The development profile, used for `cargo build`.
 [profile.dev]
 opt-level = 0 # controls the `--opt-level` the compnler builds with.
 # 0-1 is good for debugging. 2 is well-optimized. Max is 3.
 codegen-units = 16 # if > 1 enables parallel code generation which improves
-# compnle times, but prevents some optimizations.
+# compile times, but prevents some optimizations.
 # Passes `-C codegen-units`. Ignored when `lto = true`.
 panic = 'unwind' # panic strategy (`-C panic=...`), can also be 'abort'
 
