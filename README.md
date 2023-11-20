@@ -3,8 +3,6 @@
 [mpn](https://github.com/sitkevij/mpn) is a rust-based command line application which can inspect MPEG-4 media files,
 read box information, and output in variable text formats.
 
-<<<<<<< HEAD
-=======
 [![Crates.io](https://img.shields.io/crates/v/mpn?style=flat-square)](https://crates.io/crates/mpn)
 [![Crates.io](https://img.shields.io/crates/d/mpn?style=flat-square)](https://crates.io/crates/mpn)
 [![GitHub Repo stars](https://img.shields.io/github/stars/sitkevij/mpn)](https://github.com/sitkevij/mpn)
@@ -16,7 +14,6 @@ read box information, and output in variable text formats.
 
 # Help
 
->>>>>>> chore/project-updates
 ```sh
 mpn 0.2.0
 author https://github.com/sitkevij
@@ -33,21 +30,6 @@ ARGS:
     <MEDIAFILE>    Pass a valid mp4 file path as an argument for inspection
 ```
 
-<<<<<<< HEAD
-| branch  | ci status |
-|---------|-----------|
-| main    | [![ci](https://github.com/sitkevij/mpn/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/sitkevij/mpn/actions/workflows/ci.yml)|
-| develop | [![ci](https://github.com/sitkevij/mpn/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/sitkevij/mpn/actions/workflows/ci.yml)|
-
-# build & run
-
-This mini-guide expects rust and cargo already installed.
-
-## clone, test, build, run
-
-```sh
-$ git clone https://github.com/sitkevij/mpn && \
-=======
 ## CI Status
 
 | branch  | ci status                                                                                                                                                                |
@@ -69,24 +51,17 @@ cargo install mpn
 
 ```sh
 git clone https://github.com/sitkevij/mpn && \
->>>>>>> chore/project-updates
 cd mpn && \
 cargo test && \
 cargo build --release && \
 target/release/mpn tests/files/test-bokeh-au-2t-vd-30f-854x480.mp4
 ```
 
-<<<<<<< HEAD
-## output
-
-```toml
-=======
 ## Output
 
 ```toml
 $ mpn tests/files/test-bokeh-au-2t-vd-30f-854x480.mp4
 
->>>>>>> chore/project-updates
 [media]
 uri = "tests/files/test-bokeh-au-2t-vd-30f-854x480.mp4"
 creation_time = "2018-03-14 15:24:40 UTC"
@@ -131,13 +106,9 @@ codec_name = "AVC"
 
 ## License
 
-<<<<<<< HEAD
-MIT
-=======
 MIT OR Apache-2.0
 
 ## Contribution
 
 Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in the work by you, as
 defined in the Apache-2.0 license, shall be dual licensed as above, without any additional terms or conditions.
->>>>>>> chore/project-updates
