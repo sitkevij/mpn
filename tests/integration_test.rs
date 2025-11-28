@@ -331,6 +331,5 @@ fn integ_cli_hyperfine_benchmark() {
         );
     } else {
         eprintln!("hyperfine result missing 'mean' timing, skipping benchmark test");
-        return;
     }
 }
