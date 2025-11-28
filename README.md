@@ -30,12 +30,11 @@ ARGS:
     <MEDIAFILE>    Pass a valid mp4 file path as an argument for inspection
 ```
 
-## CI Status
+## Packaging Availability
 
-| branch  | ci status                                                                                                                                                                |
-| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| main    | [![main](https://github.com/sitkevij/mpn/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/sitkevij/mpn/actions/workflows/ci.yml?branch=main)          |
-| develop | [![develop](https://github.com/sitkevij/mpn/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/sitkevij/mpn/actions/workflows/ci.yml?branch=develop) |
+`mpn` is packaged and available for install on the following platforms:
+
+[![Packaging status](https://repology.org/badge/vertical-allrepos/mpn.svg)](https://repology.org/project/mpn/versions)
 
 ## Installation
 

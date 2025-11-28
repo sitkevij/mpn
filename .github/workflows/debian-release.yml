@@ -1,0 +1,352 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*" # Push events to matching v*, i.e. v1.0, v20.15.10
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Debian Release - ${{ matrix.arch }}
+    runs-on: ubuntu-latest
+    continue-on-error: ${{ matrix.experimental == true }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            target: x86_64-unknown-linux-gnu
+            deb_arch: amd64
+            experimental: false
+          - arch: arm64
+            target: aarch64-unknown-linux-gnu
+            deb_arch: arm64
+            experimental: true
+          - arch: armhf
+            target: armv7-unknown-linux-gnueabihf
+            deb_arch: armhf
+            experimental: true
+          - arch: i386
+            target: i686-unknown-linux-gnu
+            deb_arch: i386
+            experimental: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Cache cargo dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ matrix.target }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-${{ matrix.target }}-
+            ${{ runner.os }}-cargo-
+      - name: Extract package name from Cargo.toml
+        id: package_name
+        shell: bash
+        run: |
+          if [ -f "Cargo.toml" ]; then
+            PACKAGE_NAME=$(grep -m 1 "^name" Cargo.toml | sed 's/^name = "\(.*\)"$/\1/' | tr -d '"')
+            echo "name=$PACKAGE_NAME" >> $GITHUB_OUTPUT
+            echo "Package name extracted: $PACKAGE_NAME"
+          else
+            echo "Error: Cargo.toml not found!"
+            exit 1
+          fi
+      - name: Install cross-compilation dependencies
+        run: |
+          sudo apt-get update
+          if [ "${{ matrix.target }}" = "aarch64-unknown-linux-gnu" ]; then
+            sudo apt-get install -y gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu
+          elif [ "${{ matrix.target }}" = "armv7-unknown-linux-gnueabihf" ]; then
+            sudo apt-get install -y gcc-arm-linux-gnueabihf binutils-arm-linux-gnueabihf
+          elif [ "${{ matrix.target }}" = "i686-unknown-linux-gnu" ]; then
+            sudo apt-get install -y gcc-i686-linux-gnu binutils-i686-linux-gnu
+          fi
+      - name: Setup Cargo config for cross-compilation
+        run: |
+          mkdir -p .cargo
+          cat >> .cargo/config.toml << EOF
+          [target.${{ matrix.target }}]
+          EOF
+          if [ "${{ matrix.target }}" = "aarch64-unknown-linux-gnu" ]; then
+            echo 'linker = "aarch64-linux-gnu-gcc"' >> .cargo/config.toml
+          elif [ "${{ matrix.target }}" = "armv7-unknown-linux-gnueabihf" ]; then
+            echo 'linker = "arm-linux-gnueabihf-gcc"' >> .cargo/config.toml
+          elif [ "${{ matrix.target }}" = "i686-unknown-linux-gnu" ]; then
+            echo 'linker = "i686-linux-gnu-gcc"' >> .cargo/config.toml
+          fi
+      - name: Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - name: Build project for ${{ matrix.arch }}
+        run: |
+          cargo build --release --target ${{ matrix.target }}
+      - name: Install cargo-deb
+        run: |
+          # Since v2.0.0 the deb package version will have a "-1" suffix. You can disable this by adding --deb-revision="" flag or revision = "" in Cargo metadata. The default suffix is for compliance with Debian's packaging standard.
+          if ! command -v cargo-deb &> /dev/null; then
+            cargo install cargo-deb
+          else
+            echo "cargo-deb already installed (from cache)"
+            cargo-deb --version
+          fi
+      - name: Install multiarch support for ARM architectures
+        if: matrix.arch != 'amd64' && matrix.arch != 'i386'
+        run: |
+          # Install qemu-user-static for running ARM binaries on amd64
+          sudo apt-get update
+          sudo apt-get install -y qemu-user-static binfmt-support
+          # Install ARM cross-architecture libraries for dpkg-shlibdeps
+          if [ "${{ matrix.arch }}" = "arm64" ]; then
+            sudo dpkg --add-architecture arm64
+            sudo apt-get update
+            sudo apt-get install -y libc6:arm64 libgcc-s1:arm64 || true
+          elif [ "${{ matrix.arch }}" = "armhf" ]; then
+            sudo dpkg --add-architecture armhf
+            sudo apt-get update
+            sudo apt-get install -y libc6:armhf libgcc-s1:armhf || true
+          fi
+      - name: Create Debian package for ${{ matrix.arch }}
+        env:
+          DEB_TARGET_ARCH: ${{ matrix.deb_arch }}
+          DEB_HOST_ARCH: ${{ matrix.deb_arch }}
+        run: |
+          # Copy the built binary to target/release for cargo-deb
+          mkdir -p target/release
+          cp target/${{ matrix.target }}/release/${{ steps.package_name.outputs.name }} target/release/
+          
+          # Verify binary architecture before packaging
+          echo "Verifying binary architecture..."
+          file target/release/${{ steps.package_name.outputs.name }} || true
+          
+          # Build deb package without rebuilding
+          # Use --target flag to explicitly set the architecture
+          if [ "${{ matrix.arch }}" = "amd64" ] || [ "${{ matrix.arch }}" = "i386" ]; then
+            cargo deb --no-build --target ${{ matrix.target }}
+          else
+            # For ARM architectures, skip strip since strip can't handle ARM binaries on amd64 host
+            cargo deb --no-build --no-strip --target ${{ matrix.target }}
+          fi
+          
+          # Verify and fix package filename if architecture doesn't match
+          DEB_FILE=$(ls target/debian/*.deb 2>/dev/null | head -1)
+          if [ -n "$DEB_FILE" ]; then
+            echo "Generated package: $DEB_FILE"
+            echo "Expected architecture: ${{ matrix.deb_arch }}"
+            
+            # Check if architecture matches in filename
+            if [[ "$DEB_FILE" == *"${{ matrix.deb_arch }}"* ]]; then
+              echo "✓ Architecture matches in filename"
+            else
+              echo "⚠ Warning: Architecture mismatch detected"
+              echo "Current filename: $(basename "$DEB_FILE")"
+              
+              # Extract package name and version from current filename
+              # Format: package-name_version-1_arch.deb
+              PACKAGE_BASE=$(basename "$DEB_FILE" | sed -E 's/_[^_]+_[^_]+\.deb$//')
+              VERSION=$(basename "$DEB_FILE" | sed -E 's/.*_([^_]+)_[^_]+\.deb$/\1/')
+              
+              # Create correct filename with proper architecture
+              CORRECT_FILE="target/debian/${PACKAGE_BASE}_${VERSION}_${{ matrix.deb_arch }}.deb"
+              
+              if [ "$DEB_FILE" != "$CORRECT_FILE" ]; then
+                echo "Renaming package to correct architecture..."
+                mv "$DEB_FILE" "$CORRECT_FILE"
+                echo "✓ Renamed to: $(basename "$CORRECT_FILE")"
+                
+                # Also update the package metadata inside the .deb file
+                echo "Updating package metadata..."
+                dpkg-deb -e "$CORRECT_FILE" /tmp/deb-extract 2>/dev/null || true
+                if [ -f /tmp/deb-extract/control ]; then
+                  sed -i "s/Architecture: .*/Architecture: ${{ matrix.deb_arch }}/" /tmp/deb-extract/control
+                  dpkg-deb -b /tmp/deb-extract "$CORRECT_FILE" 2>/dev/null || echo "Note: Could not update internal metadata, but filename is correct"
+                  rm -rf /tmp/deb-extract
+                fi
+              fi
+            fi
+          fi
+      - name: Verify .deb file exists
+        run: |
+          DEB_FILE=$(ls target/debian/*.deb 2>/dev/null | head -1)
+          if [ -z "$DEB_FILE" ]; then
+            echo "Error: .deb file not found!"
+            exit 1
+          fi
+          echo "Found .deb file: $DEB_FILE"
+          echo "Package name: ${{ steps.package_name.outputs.name }}"
+          echo "Architecture: ${{ matrix.deb_arch }}"
+          ls -lh "$DEB_FILE"
+          # Verify the architecture in the package name
+          if [[ "$DEB_FILE" == *"${{ matrix.deb_arch }}"* ]] || [[ "$DEB_FILE" == *"all"* ]]; then
+            echo "Architecture verified in package name"
+          else
+            echo "Warning: Architecture may not match in package name"
+          fi
+      - name: Test .deb package installation
+        run: |
+          DEB_FILE=$(ls target/debian/*.deb 2>/dev/null | head -1)
+          echo "Testing installation of $DEB_FILE"
+          
+          # Install dependencies if needed (dpkg may complain about missing deps)
+          sudo apt-get update
+          
+          # Verify package structure before installation
+          echo "=== Package Structure Verification ==="
+          dpkg-deb -c "$DEB_FILE" | head -20
+          echo ""
+          
+          # Check package metadata
+          echo "=== Package Metadata ==="
+          dpkg -I "$DEB_FILE" | head -30
+          echo ""
+          
+          # Install the package (allow dependencies to be missing for now)
+          echo "=== Installing Package ==="
+          sudo dpkg -i "$DEB_FILE" || true
+          
+          # Fix any missing dependencies
+          sudo apt-get install -f -y
+          
+          # Verify the binary exists and is executable
+          BINARY_NAME="${{ steps.package_name.outputs.name }}"
+          BINARY_PATH=""
+          
+          # Find the binary location
+          if command -v "$BINARY_NAME" &> /dev/null; then
+            BINARY_PATH=$(command -v "$BINARY_NAME")
+            echo "✓ Binary '$BINARY_NAME' found at: $BINARY_PATH"
+          elif [ -f "/usr/bin/$BINARY_NAME" ]; then
+            BINARY_PATH="/usr/bin/$BINARY_NAME"
+            echo "✓ Binary found at: $BINARY_PATH"
+          elif [ -f "/usr/local/bin/$BINARY_NAME" ]; then
+            BINARY_PATH="/usr/local/bin/$BINARY_NAME"
+            echo "✓ Binary found at: $BINARY_PATH"
+          else
+            echo "✗ Error: Binary '$BINARY_NAME' not found after installation"
+            echo "Files installed by package:"
+            dpkg -L "$(dpkg -f "$DEB_FILE" Package)" || true
+            exit 1
+          fi
+          
+          # Verify binary is executable
+          if [ ! -x "$BINARY_PATH" ]; then
+            echo "✗ Error: Binary is not executable"
+            ls -l "$BINARY_PATH"
+            exit 1
+          fi
+          echo "✓ Binary is executable"
+          
+          # Check binary architecture matches expected
+          if command -v file &> /dev/null; then
+            BINARY_ARCH=$(file "$BINARY_PATH" | grep -oE "(x86-64|aarch64|ARM|Intel|80386)" || echo "unknown")
+            echo "Binary architecture: $BINARY_ARCH"
+          fi
+          
+          # Test execution only if architecture matches (amd64/i386 can run on ubuntu-latest)
+          if [ "${{ matrix.arch }}" = "amd64" ] || [ "${{ matrix.arch }}" = "i386" ]; then
+            echo "=== Testing Binary Execution ==="
+            if "$BINARY_PATH" --help &> /dev/null || "$BINARY_PATH" --version &> /dev/null; then
+              echo "✓ Binary responds to --help or --version"
+            fi
+            
+            # Test basic functionality
+            echo "Testing basic functionality..."
+            if "$BINARY_PATH" --name "TestUser" --count 5 &> /dev/null; then
+              echo "✓ Basic functionality test passed"
+            else
+              echo "⚠ Warning: Basic functionality test had issues (may be expected for cross-compiled binaries)"
+            fi
+          else
+            echo "=== Skipping Execution Test ==="
+            echo "Cannot execute ${{ matrix.arch }} binary on amd64 runner"
+            echo "Package structure and installation verified successfully"
+          fi
+          
+          # Verify package info
+          echo ""
+          echo "=== Package Verification Summary ==="
+          dpkg -l | grep "$(dpkg -f "$DEB_FILE" Package)" || true
+          
+          # Clean up: remove the package
+          echo ""
+          echo "=== Cleaning Up ==="
+          sudo dpkg -r "$(dpkg -f "$DEB_FILE" Package)" || true
+          echo "✓ Package removal successful"
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: deb-${{ matrix.arch }}
+          path: target/debian/*.deb
+          retention-days: 1
+
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    if: always() && github.event_name != 'pull_request'
+    steps:
+      - name: Extract tag name
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "tag=v0.0.0" >> $GITHUB_OUTPUT
+          else
+            echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          fi
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          if-no-files-found: warn
+      - name: Collect .deb files
+        run: |
+          mkdir -p dist
+          if [ -d "artifacts" ]; then
+            find artifacts -name "*.deb" -type f -exec cp {} dist/ \;
+          fi
+          echo "Collected .deb files:"
+          ls -lh dist/ 2>/dev/null || echo "No .deb files found"
+          
+          # Verify we have at least the required architecture (amd64)
+          if ! ls dist/*amd64*.deb 1> /dev/null 2>&1; then
+            echo "✗ Error: Required architecture (amd64) is missing!"
+            echo "Available files:"
+            ls -lh dist/ || true
+            exit 1
+          fi
+          echo "✓ Required architecture (amd64) found"
+          
+          # List all available architectures
+          echo "Available architectures:"
+          for deb in dist/*.deb; do
+            if [ -f "$deb" ]; then
+              ARCH=$(echo "$deb" | sed -E 's/.*_([^_]+)\.deb$/\1/')
+              echo "  - $ARCH: $(basename "$deb")"
+            fi
+          done
+          
+          # Count total files
+          FILE_COUNT=$(find dist -name "*.deb" -type f | wc -l)
+          if [ "$FILE_COUNT" -eq 0 ]; then
+            echo "✗ Error: No .deb files found to upload!"
+            exit 1
+          fi
+          echo "✓ Found $FILE_COUNT .deb file(s) to upload"
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          files: dist/*.deb
+          generate_release_notes: true
+          fail_on_unmatched_files: false

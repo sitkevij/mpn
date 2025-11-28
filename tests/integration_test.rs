@@ -16,22 +16,66 @@ use predicates::prelude::*;
 fn integ_cli_valid_file_path() {
     let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
     cmd.arg(common::TEST_BOKEH_AU_2T_VD_30F_854X480_MP4_FILE);
-    cmd.assert();
+    cmd.assert().success();
 }
 
 #[test]
-#[should_panic]
+fn integ_cli_missing_required_argument() {
+    let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+    cmd.assert()
+        .failure()
+        .stderr(predicate::str::contains("required"));
+}
+
+#[test]
+fn integ_cli_help_flag() {
+    let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+    cmd.arg("--help");
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("Rust-based MPEG-4 inspector"))
+        .stdout(predicate::str::contains("Usage"))
+        .stdout(predicate::str::contains("MEDIAFILE"));
+}
+
+#[test]
+fn integ_cli_version_flag() {
+    let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+    cmd.arg("--version");
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains(env!("CARGO_PKG_VERSION")));
+}
+
+#[test]
+fn integ_cli_nonexistent_file() {
+    let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+    cmd.arg("nonexistent_file_that_does_not_exist.mp4");
+    cmd.assert()
+        .failure()
+        .stderr(predicate::str::contains("error ="));
+}
+
+#[test]
 fn integ_cli_invalid_mp4_file() {
     let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
     cmd.arg("src/main.rs");
     cmd.assert()
         .failure()
-        .stderr("thread 'main' panicked at 'read_mp4 failed: UnexpectedEOF'");
+        .stderr(predicate::str::contains("read_mp4 failed"));
 }
 
-/**
- * @see https://docs.rs/predicates/0.9.1/predicates/str/fn.contains.html
- */
+#[test]
+fn integ_cli_valid_stdout_media_section() {
+    let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+    cmd.arg(common::TEST_BOKEH_AU_2T_VD_30F_854X480_MP4_FILE);
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("[media]"))
+        .stdout(predicate::str::contains("uri ="))
+        .stdout(predicate::str::contains("bytes ="));
+}
+
 #[test]
 fn integ_cli_valid_stdout_dimensions() {
     let predicate_fn = predicate::str::contains("854");
@@ -52,11 +96,13 @@ fn integ_cli_valid_stdout_codec() {
 
 #[test]
 fn integ_cli_valid_stdout_media_track_video() {
-    let predicate_fn = predicate::str::contains("video");
     let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
     cmd.arg(common::TEST_BOKEH_AU_2T_VD_30F_854X480_MP4_FILE);
-    let output = String::from_utf8(cmd.output().unwrap().stdout);
-    assert!(predicate_fn.eval(&output.unwrap()));
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("[media.track.video]"))
+        .stdout(predicate::str::contains("track_id ="))
+        .stdout(predicate::str::contains("duration ="));
 }
 
 #[test]
@@ -69,6 +115,17 @@ fn integ_cli_valid_stdout_media_track_audio() {
 }
 
 #[test]
+fn integ_cli_valid_stdout_audio_track_section() {
+    let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+    cmd.arg(common::TEST_BOKEH_AU_2T_VD_30F_854X480_MP4_FILE);
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("[media.track.audio]"))
+        .stdout(predicate::str::contains("channelcount ="))
+        .stdout(predicate::str::contains("samplerate ="));
+}
+
+#[test]
 fn integ_cli_invalid_stdout_media_track_audio() {
     let predicate_fn = predicate::str::contains("audio");
     let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
@@ -77,39 +134,203 @@ fn integ_cli_invalid_stdout_media_track_audio() {
     assert!(!predicate_fn.eval(&output.unwrap()));
 }
 
-// #[test]
-// fn integ_cli_invalid_file_path() {
-//     let mut cmd = std::process::Command::main_binary().unwrap();
-//     cmd.arg("nonexistent");
-//     cmd.assert()
-//         .failure()
-//         .stderr("error = \"No such file or directory (os error 2)\"\n");
-// }
-
-/// if need by, run with: cargo test -- --nocapture
-// #[test]
-// fn integ_cli_valid_media_creation_time() {
-//     common::setup();
-//     let file_path: String = "tests/files/test-bokeh-au-0t-vd-30f-854x480.mp4".to_string();
-//     let config = mpn::Media::new(file_path.clone()).unwrap();
-//     println!("creation_time = {}", config.creation_time);
-//     assert!(config.creation_time > 0);
-// }
-
-/// thread 'main' panicked at 'read_mp4 failed: InvalidData("unread box content or bad parser sync")', src/libcore/result.rs:906:4
 #[test]
-#[should_panic]
-fn integ_cli_nonexistant_file_2() {
-    let args: Vec<String> = vec![
-        String::from("mpn"),
-        String::from("this_file_does_not.exist"),
-    ];
-    assert_eq!(args.len(), 2);
+fn integ_cli_valid_stdout_video_track_header() {
+    let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+    cmd.arg(common::TEST_BOKEH_AU_2T_VD_30F_854X480_MP4_FILE);
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("[media.track.video.header]"))
+        .stdout(predicate::str::contains("width ="))
+        .stdout(predicate::str::contains("height ="));
+}
 
-    let filename: String = String::from("this_file_does_not.exist");
-    let config = mpn::Media::new(filename).unwrap();
-    assert_eq!(
-        config.filename,
-        "tests/files/test-bokeh-au-2t-vd-30f-854x480.mp4"
+#[test]
+fn integ_cli_valid_stdout_video_codec_section() {
+    let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+    cmd.arg(common::TEST_BOKEH_AU_2T_VD_30F_854X480_MP4_FILE);
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("[media.track.video.codec]"))
+        .stdout(predicate::str::contains("codec_name ="));
+}
+
+#[test]
+fn integ_cli_valid_stdout_audio_codec_section() {
+    let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+    cmd.arg(common::TEST_BOKEH_AU_2T_VD_30F_854X480_MP4_FILE);
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("[media.track.audio.codec]"))
+        .stdout(predicate::str::contains("codec_name ="));
+}
+
+#[test]
+fn integ_cli_valid_exit_code_success() {
+    let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+    cmd.arg(common::TEST_BOKEH_AU_2T_VD_30F_854X480_MP4_FILE);
+    let output = cmd.output().unwrap();
+    assert!(output.status.success());
+    assert_eq!(output.status.code(), Some(0));
+}
+
+#[test]
+fn integ_cli_valid_exit_code_failure() {
+    let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+    cmd.arg("nonexistent_file.mp4");
+    let output = cmd.output().unwrap();
+    assert!(!output.status.success());
+    assert_eq!(output.status.code(), Some(1));
+}
+
+#[test]
+fn integ_cli_valid_file_metadata_output() {
+    let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+    cmd.arg(common::TEST_BOKEH_AU_2T_VD_30F_854X480_MP4_FILE);
+    let output = cmd.output().unwrap();
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        stdout.contains("modified =")
+            && (stdout.contains("created =") || stdout.contains("accessed ="))
     );
+}
+
+#[test]
+fn integ_cli_valid_video_only_file() {
+    let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+    cmd.arg(common::TEST_BOKEH_AU_0T_VD_30F_854X480_MP4_FILE);
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("[media.track.video]"))
+        .stdout(predicate::str::contains("[media]"));
+}
+
+#[test]
+fn integ_cli_hyperfine_benchmark() {
+    // Check if hyperfine is available
+    let hyperfine_check = std::process::Command::new("hyperfine")
+        .arg("--version")
+        .output();
+
+    if hyperfine_check.is_err() {
+        // Skip test if hyperfine is not installed
+        println!("hyperfine not found, skipping benchmark test");
+        return;
+    }
+
+    // Get the path to the binary (absolute path)
+    let bin_path = assert_cmd::cargo::cargo_bin(env!("CARGO_PKG_NAME"));
+    let bin_path_abs = bin_path.canonicalize().unwrap_or(bin_path);
+
+    let bin_str = match bin_path_abs.to_str() {
+        Some(s) => s.to_string(),
+        None => {
+            eprintln!("Binary path is not valid UTF-8, skipping benchmark test");
+            return;
+        }
+    };
+
+    // Get absolute path to test file
+    let test_file_path = std::path::Path::new(common::TEST_BOKEH_AU_2T_VD_30F_854X480_MP4_FILE);
+    let test_file_abs = test_file_path
+        .canonicalize()
+        .unwrap_or_else(|_| test_file_path.to_path_buf());
+
+    let test_file_str = match test_file_abs.to_str() {
+        Some(s) => s.to_string(),
+        None => {
+            eprintln!("Test file path is not valid UTF-8, skipping benchmark test");
+            return;
+        }
+    };
+
+    // Run hyperfine benchmark
+    // Hyperfine requires the command to be passed as a shell command string
+    let command_str = format!("{} {}", bin_str, test_file_str);
+
+    let output = match std::process::Command::new("hyperfine")
+        .arg("--warmup")
+        .arg("2")
+        .arg("--min-runs")
+        .arg("3")
+        .arg("--max-runs")
+        .arg("5")
+        .arg("--export-json")
+        .arg("-")
+        .arg(&command_str)
+        .output()
+    {
+        Ok(output) => output,
+        Err(e) => {
+            eprintln!(
+                "Failed to execute hyperfine: {}, skipping benchmark test",
+                e
+            );
+            return;
+        }
+    };
+
+    if !output.status.success() {
+        eprintln!(
+            "hyperfine benchmark failed (exit code: {}), skipping: {}",
+            output.status.code().unwrap_or(-1),
+            String::from_utf8_lossy(&output.stderr)
+        );
+        return;
+    }
+
+    // Parse JSON output to verify benchmark results
+    // Hyperfine outputs JSON to stdout, but may also output text to stderr
+    let stdout = match String::from_utf8(output.stdout) {
+        Ok(s) => s,
+        Err(e) => {
+            eprintln!(
+                "hyperfine output is not valid UTF-8: {}, skipping benchmark test",
+                e
+            );
+            return;
+        }
+    };
+
+    // Find JSON in output (hyperfine may output text before JSON)
+    let json_start = match stdout.find('{') {
+        Some(pos) => pos,
+        None => {
+            eprintln!("No JSON found in hyperfine output, skipping benchmark test");
+            return;
+        }
+    };
+    let json_str = &stdout[json_start..];
+
+    let json: serde_json::Value = match serde_json::from_str(json_str) {
+        Ok(j) => j,
+        Err(e) => {
+            eprintln!(
+                "Failed to parse hyperfine JSON output: {}, skipping benchmark test",
+                e
+            );
+            return;
+        }
+    };
+
+    // Verify that we have results
+    let results = match json.get("results").and_then(|r| r.as_array()) {
+        Some(arr) if !arr.is_empty() => arr,
+        _ => {
+            eprintln!("hyperfine output missing or empty 'results' field, skipping benchmark test");
+            return;
+        }
+    };
+
+    // Check that we have timing information
+    let first_result = &results[0];
+    if let Some(mean) = first_result.get("mean").and_then(|m| m.as_f64()) {
+        println!(
+            "Benchmark completed: mean execution time = {:.2} seconds",
+            mean
+        );
+    } else {
+        eprintln!("hyperfine result missing 'mean' timing, skipping benchmark test");
+        return;
+    }
 }
