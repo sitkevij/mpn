@@ -6,7 +6,9 @@
 //!
 //! ## Usage
 //!
-//! The application expects a single required argument: the path to an MP4 file.
+//! The application expects a single required argument: the path to a media file.
+//! Container type is sniffed from magic bytes; deep track/codec inspect is
+//! MPEG-4 / ISO BMFF only.
 //!
 //! ```bash
 //! mpn path/to/video.mp4
@@ -14,8 +16,8 @@
 //!
 //! ## Exit Codes
 //!
-//! - `0`: Success - MP4 file was inspected successfully
-//! - `1`: Error - An error occurred during inspection (file not found, invalid format, etc.)
+//! - `0`: Success - file was classified (and inspected when MP4-family)
+//! - `1`: Error - An error occurred (file not found, unreadable, etc.)
 
 extern crate clap;
 use clap::{Arg, Command};
@@ -43,7 +45,7 @@ fn main() {
             // Define the required MEDIAFILE argument
             // This is a positional argument (index 1) that must be provided
             Arg::new(mpn::ARG_MEDIAFILE)
-                .help("Pass a valid mp4 file path as an argument for inspection")
+                .help("Path to a media file (sniffed; deep inspect for MPEG-4 / ISO BMFF)")
                 .required(true)
                 .index(1), // Positional argument at index 1 (after the program name)
         )

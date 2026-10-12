@@ -57,12 +57,16 @@ fn integ_cli_nonexistent_file() {
 }
 
 #[test]
-fn integ_cli_invalid_mp4_file() {
+fn integ_cli_non_media_file_sniff_only() {
     let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
     cmd.arg("src/main.rs");
     cmd.assert()
-        .failure()
-        .stderr(predicate::str::contains("read_mp4 failed"));
+        .success()
+        .stdout(predicate::str::contains("format = \"unknown\""))
+        .stdout(predicate::str::contains(
+            "mime = \"application/octet-stream\"",
+        ))
+        .stdout(predicate::str::contains("inspect = false"));
 }
 
 #[test]
@@ -73,7 +77,10 @@ fn integ_cli_valid_stdout_media_section() {
         .success()
         .stdout(predicate::str::contains("[media]"))
         .stdout(predicate::str::contains("uri ="))
-        .stdout(predicate::str::contains("bytes ="));
+        .stdout(predicate::str::contains("bytes ="))
+        .stdout(predicate::str::contains("format = \"m4v\""))
+        .stdout(predicate::str::contains("mime = \"video/x-m4v\""))
+        .stdout(predicate::str::contains("inspect = true"));
 }
 
 #[test]
@@ -332,4 +339,19 @@ fn integ_cli_hyperfine_benchmark() {
     } else {
         eprintln!("hyperfine result missing 'mean' timing, skipping benchmark test");
     }
+}
+
+/// Ensures rusty-hook config stays aligned with `make pre-commit` (fmt, clippy, test).
+#[test]
+fn integ_rusty_hook_pre_commit_config() {
+    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(".rusty-hook.toml");
+    let contents = std::fs::read_to_string(&path).expect(".rusty-hook.toml should exist");
+    assert!(
+        contents.contains("pre-commit"),
+        "rusty-hook config should define a pre-commit hook"
+    );
+    assert!(
+        contents.contains("make pre-commit"),
+        "pre-commit hook should run the Makefile pre-commit target"
+    );
 }

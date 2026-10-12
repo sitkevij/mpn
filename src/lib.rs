@@ -20,7 +20,8 @@
 //!
 //! ## Features
 //!
-//! - Parse MP4 file structure and metadata
+//! - Sniff common video/audio container formats from magic bytes
+//! - Parse MP4 file structure and metadata (deep inspect for MP4-family only)
 //! - Extract video track information (dimensions, codec, timing)
 //! - Extract audio track information (channels, sample rate, codec)
 //! - Display file system metadata (creation, modification, access times)
@@ -30,13 +31,13 @@
 //! ## Usage
 //!
 //! The main entry point is the `run` function, which takes parsed command-line
-//! arguments and processes an MP4 file.
+//! arguments and processes a media file (deep inspect for MPEG-4 / ISO BMFF).
 //!
 //! ## Output Format
 //!
 //! The library outputs structured information in an INI-like format with sections:
 //!
-//! - `[media]` - File-level metadata
+//! - `[media]` - File-level metadata, including sniffed `format` / `mime` / `inspect`
 //! - `[media.track.video]` - Video track information
 //! - `[media.track.audio]` - Audio track information
 //! - `[media.track.video.header]` - Video track header details
@@ -48,13 +49,16 @@ extern crate clap;
 extern crate filetime;
 extern crate mp4parse;
 
+mod detect;
+
 use self::chrono::prelude::TimeZone;
 use clap::ArgMatches;
-use mp4parse::read_mp4;
+use detect::sniff_or_unknown;
 use mp4parse::AudioCodecSpecific;
 use mp4parse::SampleEntry;
 use mp4parse::TrackType;
 use mp4parse::VideoCodecSpecific;
+use mp4parse::read_mp4;
 use no_color::is_no_color;
 use std::collections::HashMap;
 use std::error::Error;
@@ -215,6 +219,13 @@ pub fn run(matches: ArgMatches) -> Result<(), Box<dyn Error>> {
 
         // Output file size in bytes
         println!("bytes = {}", size);
+
+        // Sniff container format from leading magic bytes / signatures.
+        let detected = sniff_or_unknown(&buf);
+        println!("format = \"{}\"", detected.id);
+        println!("mime = \"{}\"", detected.mime);
+        println!("inspect = {}", detected.inspectable);
+
         // Output file modification time
         // Note: Some filesystems may not support all timestamp operations
         if let Ok(time) = metadata.modified() {
@@ -285,6 +296,12 @@ pub fn run(matches: ArgMatches) -> Result<(), Box<dyn Error>> {
                 "\"error: not supported on this platform.\""
             );
         }
+        // Deep inspect is MP4-family (ISO BMFF) only; other formats are classified above.
+        if !detected.inspectable {
+            println!();
+            return Ok(());
+        }
+
         // Parse the MP4 file structure using mp4parse
         // We use a Cursor to allow the parser to read from the in-memory buffer
         let mut c = Cursor::new(buf);

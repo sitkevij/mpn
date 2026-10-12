@@ -1,7 +1,7 @@
 # mpn
 
-[mpn](https://github.com/sitkevij/mpn) is a rust-based command line application which can inspect MPEG-4 media files,
-read box information, and output in variable text formats.
+[mpn](https://github.com/sitkevij/mpn) is a rust-based command line application which sniffs common media container
+types, inspects MPEG-4 / ISO BMFF files (box / track / codec metadata), and outputs structured text.
 
 [![Crates.io](https://img.shields.io/crates/v/mpn?style=flat-square)](https://crates.io/crates/mpn)
 [![Crates.io](https://img.shields.io/crates/d/mpn?style=flat-square)](https://crates.io/crates/mpn)
@@ -15,9 +15,8 @@ read box information, and output in variable text formats.
 # Help
 
 ```sh
-mpn 0.2.0
-author https://github.com/sitkevij
-MPEG-4 media file inspector.
+mpn
+Rust-based MPEG-4 inspector with variable output.
 
 USAGE:
     mpn <MEDIAFILE>
@@ -27,7 +26,7 @@ FLAGS:
     -V, --version    Prints version information
 
 ARGS:
-    <MEDIAFILE>    Pass a valid mp4 file path as an argument for inspection
+    <MEDIAFILE>    Path to a media file (sniffed; deep inspect for MPEG-4 / ISO BMFF)
 ```
 
 ## Packaging Availability
@@ -56,16 +55,25 @@ cargo build --release && \
 target/release/mpn tests/files/test-bokeh-au-2t-vd-30f-854x480.mp4
 ```
 
+The first `cargo test` also installs [rusty-hook](https://github.com/swellaby/rusty-hook) git
+hooks from `.rusty-hook.toml` (pre-commit runs `make pre-commit`: format, clippy, tests).
+
 ## Output
+
+The `[media]` section always includes sniffed `format`, `mime`, and `inspect`
+(whether deep MPEG-4 inspect ran). Non-MP4 containers are classified and exit
+successfully with `inspect = false`.
 
 ```toml
 $ mpn tests/files/test-bokeh-au-2t-vd-30f-854x480.mp4
 
 [media]
 uri = "tests/files/test-bokeh-au-2t-vd-30f-854x480.mp4"
-creation_time = "2018-03-14 15:24:40 UTC"
-last_modified_time = "2018-03-14 15:24:40 UTC"
-last_accessed_time = "2018-03-14 15:28:25 UTC"
+bytes = 123456
+format = "mp4"
+mime = "video/mp4"
+inspect = true
+modified = 2018-03-14T15:24:40Z
 [media.track.audio]
 track_id = "1"
 duration = "TrackScaledTime(50176, 0)"
