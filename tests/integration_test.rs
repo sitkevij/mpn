@@ -355,3 +355,22 @@ fn integ_rusty_hook_pre_commit_config() {
         "pre-commit hook should run the Makefile pre-commit target"
     );
 }
+
+/// Guards README against drift on sniff-only output and documented dev commands.
+#[test]
+fn integ_readme_documents_sniff_and_dev_workflow() {
+    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("README.md");
+    let readme = std::fs::read_to_string(&path).expect("README.md should exist");
+    for needle in [
+        "inspect = false",
+        "inspect = true",
+        "make ci",
+        "Sniffing vs inspect",
+        "application/octet-stream",
+    ] {
+        assert!(
+            readme.contains(needle),
+            "README.md should document {needle:?}"
+        );
+    }
+}
