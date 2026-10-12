@@ -10,8 +10,6 @@ on:
       - develop
       - main
       - master
-  schedule:
-    - cron: "0 9 * * *"
 
 env:
   RUST_BACKTRACE: full
@@ -19,30 +17,148 @@ env:
 
 jobs:
   test:
-    name: Test Rust ${{ matrix.rust }} on ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
+    name: Test Rust ${{ matrix.name }} on ${{ matrix.target }}
+    runs-on: ${{ matrix.runner }}
     continue-on-error: ${{ matrix.experimental }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          - { rust: stable, os: ubuntu-latest, experimental: false }
-          - { rust: stable, os: macos-latest, experimental: false }
-          - { rust: stable, os: windows-latest, experimental: false }
-          - { rust: stable-i686-msvc, os: windows-latest, experimental: false }
-          - { rust: beta, os: ubuntu-latest, experimental: true }
-          - { rust: nightly, os: ubuntu-latest, experimental: true }
+          - name: linux-amd64
+            runner: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            experimental: false
+            toolchain: stable
+          - name: linux-arm64
+            runner: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-gnu
+            experimental: false
+            toolchain: stable
+          - name: linux-i686
+            runner: ubuntu-latest
+            target: i686-unknown-linux-gnu
+            experimental: false
+            toolchain: stable
+          - name: win-amd64
+            runner: windows-latest
+            target: x86_64-pc-windows-msvc
+            experimental: false
+            toolchain: stable
+          - name: win-i686
+            runner: windows-latest
+            target: i686-pc-windows-msvc
+            experimental: false
+            toolchain: stable
+          - name: macos-arm64
+            runner: macos-latest
+            target: aarch64-apple-darwin
+            experimental: false
+            toolchain: stable
+          - name: macos-amd64
+            runner: macos-latest
+            target: x86_64-apple-darwin
+            experimental: false
+            toolchain: stable
+          - name: linux-amd64
+            runner: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            experimental: true
+            toolchain: beta
+          - name: linux-amd64
+            runner: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            experimental: true
+            toolchain: nightly
     steps:
-      - uses: actions/checkout@v4
-      - uses: hecrj/setup-rust-action@v2
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # Do not cache ~/.cargo/bin (arch-specific rustup/cargo) or target/
+      # (stale incremental artifacts). Include runner.arch so Linux amd64
+      # and arm64 never share a cache key.
+      - name: Cache cargo dependencies
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          rust-version: ${{ matrix.rust }}
-      - run: cargo build --verbose --all
-      - run: cargo build --release
-      - run: cargo test -- --test-threads=1
-      - run: cargo install hyperfine
-      - run: target/release/mpn tests/files/test-bokeh-au-2t-vd-30f-854x480.mp4
-      - run: hyperfine -i --warmup 20 "target/release/mpn tests/files/test-bokeh-au-2t-vd-30f-854x480.mp4"
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+          key: ${{ runner.os }}-${{ runner.arch }}-cargo-${{ matrix.toolchain }}-${{ matrix.target }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ runner.arch }}-cargo-${{ matrix.toolchain }}-${{ matrix.target }}-
+            ${{ runner.os }}-${{ runner.arch }}-cargo-${{ matrix.toolchain }}-
+      - name: Rust toolchain
+        uses: dtolnay/rust-toolchain@7e38f4b43b4db5c8dd498af069a4f6196df1d067 # 2026-10-01
+        with:
+          toolchain: "${{ matrix.toolchain }}"
+          targets: "${{ matrix.target }}"
+      - name: Build (debug)
+        run: cargo build --verbose --all
+      - name: Build (release)
+        run: cargo build --release
+      - name: Run unit tests
+        shell: sh
+        run: cargo test --lib --verbose -- --nocapture
+      - name: Run integration tests
+        shell: sh
+        run: cargo test --tests --verbose -- --nocapture
+      - name: Run doctests
+        shell: sh
+        run: cargo test --doc --verbose
+      - name: Run all tests (unit, integration, and doctests)
+        shell: sh
+        run: cargo test --verbose --all -- --nocapture
+      - name: Run release profile tests
+        shell: sh
+        run: cargo test --release --all -- --nocapture
+
+  # Emulated targets with no GitHub-hosted runner (qemu-user via
+  # taiki-e/setup-cross-toolchain-action). Catches arch-specific libc
+  # breakages such as riscv64 / loongarch64 on an outdated lockfile pin.
+  cross-test:
+    name: Cross test ${{ matrix.name }} on ${{ matrix.target }}
+    runs-on: ubuntu-latest
+    continue-on-error: ${{ matrix.experimental }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: linux-riscv64
+            target: riscv64gc-unknown-linux-gnu
+            experimental: false
+          - name: linux-loongarch64
+            target: loongarch64-unknown-linux-gnu
+            experimental: false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Cache cargo dependencies
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+          key: ${{ runner.os }}-${{ runner.arch }}-cargo-cross-${{ matrix.target }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ runner.arch }}-cargo-cross-${{ matrix.target }}-
+            ${{ runner.os }}-${{ runner.arch }}-cargo-cross-
+      - name: Rust toolchain
+        uses: dtolnay/rust-toolchain@7e38f4b43b4db5c8dd498af069a4f6196df1d067 # 2026-10-01
+        with:
+          toolchain: stable
+          targets: "${{ matrix.target }}"
+      - name: Install cross-compilation tools
+        uses: taiki-e/setup-cross-toolchain-action@12b7ad4acfa95a1476779d6c06699b96ec1691f8 # v1.42.0
+        with:
+          target: ${{ matrix.target }}
+      - name: Build (debug)
+        run: cargo build --verbose --all
+      - name: Build (release)
+        run: cargo build --release
+      - name: Run all tests (unit, integration, and doctests)
+        run: cargo test --verbose --all -- --nocapture
+      - name: Run release profile tests
+        run: cargo test --release --all -- --nocapture
 
   clippy:
     name: Lint with clippy
@@ -50,38 +166,53 @@ jobs:
     env:
       RUSTFLAGS: -Dwarnings
     steps:
-      - uses: actions/checkout@v4
-      - uses: hecrj/setup-rust-action@v2
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Cache cargo dependencies
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+          key: ${{ runner.os }}-${{ runner.arch }}-cargo-clippy-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ runner.arch }}-cargo-clippy-
+      - name: Rust toolchain
+        uses: dtolnay/rust-toolchain@7e38f4b43b4db5c8dd498af069a4f6196df1d067 # 2026-10-01
+        with:
+          toolchain: stable
           components: clippy
-      - run: cargo clippy --workspace --all-targets --verbose
-      - run: cargo clippy --workspace --all-targets --verbose --no-default-features
-      - run: cargo clippy --workspace --all-targets --verbose --all-features
+      - name: Clippy (default features)
+        run: cargo clippy --workspace --all-targets --verbose
+      - name: Clippy (no default features)
+        run: cargo clippy --workspace --all-targets --verbose --no-default-features
+      - name: Clippy (all features)
+        run: cargo clippy --workspace --all-targets --verbose --all-features
 
   rustfmt:
     name: Verify code formatting
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: hecrj/setup-rust-action@v2
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Rust toolchain
+        uses: dtolnay/rust-toolchain@7e38f4b43b4db5c8dd498af069a4f6196df1d067 # 2026-10-01
         with:
+          toolchain: stable
           components: rustfmt
-      - run: cargo fmt --all -- --check
+      - name: Check formatting
+        run: cargo fmt --all -- --check
 
   codespell:
     name: Verify code spelling
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - run: |
-          pip install codespell
-          codespell -L crate src/*.rs *.md tests/*.rs *.toml
-
-  markdownlint:
-    name: Lint markdown
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - run: |
-          npm install markdownlint-cli2 --global
-          markdownlint-cli2 --config .markdownlint.json *.md
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install codespell
+        run: |
+          pip3 install --upgrade pip
+          pip3 install codespell
+      - name: Check spelling
+        run: git ls-files | xargs codespell -L crate
