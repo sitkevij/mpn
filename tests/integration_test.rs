@@ -357,8 +357,15 @@ fn integ_rusty_hook_pre_commit_config() {
 }
 
 /// Mirrors the CI codespell job on tracked files (`git ls-files | xargs codespell -L crate`).
+///
+/// Skipped on GitHub Actions: the dedicated `codespell` workflow job covers CI, and cross-test
+/// jobs execute this binary under QEMU where the host `codespell` install is unavailable.
 #[test]
 fn integ_codespell_tracked_files() {
+    if std::env::var("CI").is_ok() {
+        eprintln!("skipping codespell integration test in CI (see codespell workflow job)");
+        return;
+    }
     if Command::new("codespell").arg("--version").output().is_err() {
         eprintln!("codespell not found, skipping codespell integration test");
         return;
@@ -383,8 +390,9 @@ fn integ_codespell_tracked_files() {
         .expect("codespell should execute");
     assert!(
         output.status.success(),
-        "codespell reported issues:\n{}",
-        String::from_utf8_lossy(&output.stdout)
+        "codespell reported issues:\n{}\n{}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
     );
 }
 
