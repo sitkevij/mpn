@@ -24,17 +24,18 @@ opt-level = 2
 codegen-units = 1
 
 [dependencies]
-mp4parse = "0.17.0"
-clap = "4.5"
-filetime = "0.1"
-chrono = "0.4"
-no_color = "0.2"
+mp4parse = "=0.17.0"
+clap = "=4.5.13"
+filetime = "=0.1.15"
+chrono = "=0.4.31"
+no_color = "=0.2.0"
 
 [dev-dependencies]
-assert_cmd = "2.0.12"
-tempfile = "3.8"
-reqwest = { version = "0.11", features = ["blocking", "json"] }
-tokio = { version = "1", features = ["full"] }
-url = { version = "2.4" }
-predicates = "3"
-serde_json = "1.0"
+assert_cmd = "=2.0.12"
+tempfile = "=3.8.1"
+reqwest = { version = "=0.11.22", features = ["blocking", "json"] }
+tokio = { version = "=1.33.0", features = ["full"] }
+url = { version = "=2.4.1" }
+predicates = "=3.0.4"
+serde_json = "=1.0.108"
+rusty-hook = "=0.11.2"

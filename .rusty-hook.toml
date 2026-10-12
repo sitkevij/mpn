@@ -1,0 +1,4 @@
+# Git hooks (https://github.com/swellaby/rusty-hook). Installed when dev-deps build
+# (e.g. `cargo test`). Edit hooks here, then re-run `cargo test` or `rusty-hook init`.
+[hooks]
+pre-commit = "make pre-commit"
