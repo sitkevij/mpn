@@ -215,4 +215,4 @@ jobs:
           pip3 install --upgrade pip
           pip3 install codespell
       - name: Check spelling
-        run: codespell -L crate
+        run: git ls-files | xargs codespell -L crate

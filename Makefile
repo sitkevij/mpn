@@ -317,4 +317,4 @@ clean-all: clean ## Remove all artifacts including Cargo registry cache
 
 distclean: clean-all ## Remove everything including dependencies (nuclear option)
 	@echo "This will remove all Cargo artifacts. Continue? [y/N]"
-	@read -r ans && [ "$$ans" = "y" ] && $(CARGO) clean || echo "Cancelled"
+	@read -r answer && [ "$$answer" = "y" ] && $(CARGO) clean || echo "Cancelled"

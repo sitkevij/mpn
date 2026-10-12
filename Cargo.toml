@@ -12,7 +12,7 @@ include = ["src/**/*", "Cargo.toml", "Cargo.lock", "README.md"]
 
 # The development profile, used for `cargo build`.
 [profile.dev]
-opt-level = 0 # controls the `--opt-level` the compnler builds with.
+opt-level = 0 # controls the `--opt-level` the compiler builds with.
 # 0-1 is good for debugging. 2 is well-optimized. Max is 3.
 codegen-units = 16 # if > 1 enables parallel code generation which improves
 # compile times, but prevents some optimizations.
@@ -33,7 +33,11 @@ no_color = "=0.2.0"
 [dev-dependencies]
 assert_cmd = "=2.0.12"
 tempfile = "=3.8.1"
-reqwest = { version = "=0.11.22", features = ["blocking", "json"] }
+reqwest = { version = "=0.11.22", default-features = false, features = [
+  "blocking",
+  "json",
+  "rustls-tls",
+] }
 tokio = { version = "=1.33.0", features = ["full"] }
 url = { version = "=2.4.1" }
 predicates = "=3.0.4"

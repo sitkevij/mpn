@@ -356,6 +356,38 @@ fn integ_rusty_hook_pre_commit_config() {
     );
 }
 
+/// Mirrors the CI codespell job on tracked files (`git ls-files | xargs codespell -L crate`).
+#[test]
+fn integ_codespell_tracked_files() {
+    if Command::new("codespell").arg("--version").output().is_err() {
+        eprintln!("codespell not found, skipping codespell integration test");
+        return;
+    }
+    let list = std::process::Command::new("git")
+        .args(["ls-files"])
+        .output()
+        .expect("git ls-files should succeed");
+    assert!(
+        list.status.success(),
+        "git ls-files failed: {}",
+        String::from_utf8_lossy(&list.stderr)
+    );
+    let files = String::from_utf8_lossy(&list.stdout);
+    let paths: Vec<&str> = files.lines().filter(|l| !l.is_empty()).collect();
+    assert!(!paths.is_empty(), "expected at least one tracked file");
+    let output = Command::new("codespell")
+        .arg("-L")
+        .arg("crate")
+        .args(&paths)
+        .output()
+        .expect("codespell should execute");
+    assert!(
+        output.status.success(),
+        "codespell reported issues:\n{}",
+        String::from_utf8_lossy(&output.stdout)
+    );
+}
+
 /// Guards README against drift on sniff-only output and documented dev commands.
 #[test]
 fn integ_readme_documents_sniff_and_dev_workflow() {
